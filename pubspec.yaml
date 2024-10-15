@@ -1,0 +1,81 @@
+name: desktop_search_a_holic
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  syncfusion_flutter_charts: ^27.1.52
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+  fluent_ui: ^4.9.2
+  desktop_window: ^0.4.1
+  firedart: ^0.9.8
+  flutter_native_splash: ^2.4.1 # Splash Screen
+  path_provider: ^2.1.4
+  google_fonts: ^6.2.1
+  rounded_loading_button: ^2.0.8
+  cloud_firestore: ^5.4.4
+  form_field_validator: ^1.1.0 
+  quickalert: ^1.1.0
+  email_otp: ^3.0.2
+  alert: ^2.0.1
+  e_invoice_generator: ^0.1.3
+  firebase_auth: ^5.3.1
+  # share_whatsapp: ^1.0.2
+  whatsapp_share: ^2.0.2
+  simple_circular_progress_bar: ^1.0.2
+  file_picker: ^8.1.2
+  url_launcher: ^6.3.1
+  crypto: ^3.0.5
+  csv: ^6.0.0
+  # geolocator: ^9.0.2
+  permission_handler: ^11.3.1
+  # geocoder: ^0.2.1
+  url_launcher_android: ^6.3.12
+  d_chart: ^2.9.0
+  intl: ^0.19.0
+  # geocoding: ^3.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+assets:
+    - assets/data.json
+    - images/logo.png
+    - images/registration.jpg
+    - images/analytics_icon.png
+    - images/categories_icon.png
+    - images/dashboard_icon.png
+    - images/orders_icon.png
+    - images/products_icon.png
+    - images/profile_icon.png
+    - images/revenue_icon.png
+    - images/sale_icon.png
+    - images/sales_icon.png
+    - images/settings_icon.png
+    - images/sidebarLogo.png
+    - images/newOrder.png
+    - images/searchProduct.png
+    - images/addProduct.png
+    - images/addCategory.png
+    - images/viewOrders.png
+    - images/report.png
+    - images/password_recover.jpg
+    - images/logout_icon3.png
+    - images/profile.jpg
+    - images/password_change.png
+    - images/p1.png
+    - images/uploadData.png
