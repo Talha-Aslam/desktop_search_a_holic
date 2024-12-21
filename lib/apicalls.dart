@@ -1,19 +1,22 @@
-// This contain functions for api calls
-
-// import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
+// This contains functions for dummy data
 
 class ApiCall {
-  Future<Position> getCurrentLocation() async {
-    var status = await Permission.location.status;
+  Future<Map<String, double>> getCurrentLocation() async {
+    // Dummy data for location
+    return {
+      'latitude': 37.7749,
+      'longitude': -122.4194,
+    };
+  }
 
-    PermissionStatus permission = await Permission.location.request();
-    if (permission != PermissionStatus.granted) {
-      print("Permission not granted");
-      throw Exception('Location permission not granted');
-    }
-    Position position = '' as Position;
-    return position;
+  Future<List<Map<String, dynamic>>> getDummyChartData() async {
+    // Dummy data for chart
+    return [
+      {'x': 'Jan', 'y': 30},
+      {'x': 'Feb', 'y': 28},
+      {'x': 'Mar', 'y': 34},
+      {'x': 'Apr', 'y': 32},
+      {'x': 'May', 'y': 40},
+    ];
   }
 }

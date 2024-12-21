@@ -1,13 +1,12 @@
 // Add Product Page
 
 // Path: lib\addProduct.dart
-import 'package:firedart/firestore/firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
 import 'package:desktop_search_a_holic/product.dart';
 import 'package:desktop_search_a_holic/sidebar.dart';
-import 'imports.dart';
 import 'package:intl/intl.dart';
 
 class AddProduct extends StatefulWidget {
@@ -96,12 +95,10 @@ class _AddProduct extends State<AddProduct> {
                           } else {
                             RegExp regExp = RegExp(
                               r"^[a-zA-Z][a-zA-Z0-9\s]*$",
-                              // r"^[A-Za-z0-9 _]*[A-Za-z0-9][A-Za-z0-9 _]*$",
                               caseSensitive: false,
                               multiLine: false,
                             );
                             if (!regExp.hasMatch(value)) {
-                              // Make input field red
                               return 'Please enter a valid Name';
                             }
                           }
@@ -172,33 +169,21 @@ class _AddProduct extends State<AddProduct> {
                               border: OutlineInputBorder(),
                               prefixIcon: Icon(Icons.calendar_today),
                               suffixIcon: Icon(Icons.arrow_drop_down),
-                              //icon of text field
-                              labelText:
-                                  "Enter Expire Date" //label text of field
-                              ),
+                              labelText: "Enter Expire Date"),
 
-                          readOnly:
-                              true, //set it true, so that user will not able to edit text
+                          readOnly: true,
                           onTap: () async {
                             DateTime? pickedDate = await showDatePicker(
                                 context: context,
                                 initialDate: DateTime.now(),
                                 firstDate: DateTime(1950),
-                                //DateTime.now() - not to allow to choose before today.
                                 lastDate: DateTime(2100));
 
                             if (pickedDate != null) {
-                              print(
-                                  pickedDate); //pickedDate output format => 2021-03-10 00:00:00.000
                               String formattedDate =
                                   DateFormat('yyyy-MM-dd').format(pickedDate);
-                              print(
-                                  formattedDate); //formatted date output using intl package =>  2021-03-16
-                              //you can implement different kind of Date Format here according to your requirement
-
                               setState(() {
-                                dateinput.text =
-                                    formattedDate; //set output date to TextField value.
+                                dateinput.text = formattedDate;
                               });
                             } else {
                               print("Date is not selected");
@@ -210,7 +195,6 @@ class _AddProduct extends State<AddProduct> {
                           top: MediaQuery.of(context).size.height * 0.047),
                       width: MediaQuery.of(context).size.width * 0.55,
                       height: MediaQuery.of(context).size.height * 0.08,
-                      // Options [Public or Private]
                       child: DropdownButtonFormField(
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
@@ -228,22 +212,17 @@ class _AddProduct extends State<AddProduct> {
                         ],
                         onChanged: (value) {
                           _productType.text = value.toString();
-                          print(value);
-                          print(_productType.text);
                         },
                         hint: const Text(
                           "Select Product Visibility",
                         ),
                       ),
                     ),
-
-                    // Product Category
                     Container(
                       margin: EdgeInsets.only(
                           top: MediaQuery.of(context).size.height * 0.047),
                       width: MediaQuery.of(context).size.width * 0.55,
                       height: MediaQuery.of(context).size.height * 0.08,
-                      // Options [Public or Private]
                       child: DropdownButtonFormField(
                         decoration: const InputDecoration(
                             border: OutlineInputBorder(),
@@ -276,7 +255,6 @@ class _AddProduct extends State<AddProduct> {
                         hint: const Text("Select Product Category"),
                       ),
                     ),
-                    // A Row with 2 buttons (left: Cancel, right: Add)
                     Container(
                       margin: EdgeInsets.only(
                           top: MediaQuery.of(context).size.height * 0.047),
@@ -291,7 +269,6 @@ class _AddProduct extends State<AddProduct> {
                                     MediaQuery.of(context).size.width * 0.222),
                             child: ElevatedButton(
                               onPressed: () {
-                                // Navigator.pop(context);
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -315,19 +292,14 @@ class _AddProduct extends State<AddProduct> {
                                     MediaQuery.of(context).size.width * 0.270),
                             child: ElevatedButton(
                               onPressed: () {
-                                // Add Product to the Database
                                 if (formkey.currentState!.validate()) {
-                                  addProduct().then((value) {
-                                    if (value) {
-                                      showAlert1();
-                                      _productName.clear();
-                                      _productPrice.clear();
-                                      _productQty.clear();
-                                      _productType.clear();
-                                    } else {
-                                      showAlert();
-                                    }
-                                  });
+                                  showAlert1();
+                                  _productName.clear();
+                                  _productPrice.clear();
+                                  _productQty.clear();
+                                  _productType.clear();
+                                  _productCategory.clear();
+                                  dateinput.clear();
                                 }
                               },
                               style: ElevatedButton.styleFrom(
@@ -350,53 +322,5 @@ class _AddProduct extends State<AddProduct> {
         ),
       ),
     );
-  }
-
-  Future<Map<String, dynamic>> addDataToMap(
-      Map<String, dynamic> map, String email) async {
-    // _productName.text, _productPrice.text,
-    //     _productQty.text, _productType.text
-
-    // Generating key of the Product
-    final productId = Flutter_api().generateProductId(_productName.text);
-
-    var Details = await Firestore.instance
-        .collection(email)
-        .document("Store Details")
-        .get();
-
-    print(Details);
-
-    map.putIfAbsent(
-        productId,
-        () => {
-              "Name": _productName.text,
-              "Price": _productPrice.text,
-              "Quantity": _productQty.text,
-              "Expire": dateinput.text,
-              "storeEmail": email,
-              "Type": _productType.text,
-              "ProductID": productId,
-              "StoreId": Details["storeId"],
-              "StoreLocation": Details["storeLocation"],
-              "StoreName": Details["storeName"],
-              "Category": _productCategory.text,
-            });
-
-    return Future<Map<String, dynamic>>.value(map);
-  }
-
-  Future<bool> addProduct() async {
-    final DATA = await Flutter_api().getAllProducts();
-    final email = await Flutter_api().getEmail();
-    final storeId = Flutter_api().generateStoreId(email);
-
-    // Add Product to the Map
-    final map = await addDataToMap(DATA!.map, email);
-
-    // Update the Database
-    await Firestore.instance.collection("Products").document(storeId).set(map);
-
-    return Future<bool>.value(true);
   }
 }

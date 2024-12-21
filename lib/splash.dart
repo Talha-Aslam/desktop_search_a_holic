@@ -1,22 +1,30 @@
-//Splash Screen
-// ignore_for_file: avoid_unnecessary_containers
-
 import 'package:flutter/material.dart';
+import 'dart:async';
 
-// Creating a Splash Screen with Fixed Size of 800x1000
-
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _navigateToNextScreen();
+  }
+
+  void _navigateToNextScreen() async {
+    await Future.delayed(const Duration(seconds: 3), () {});
+    Navigator.pushReplacementNamed(context, '/login');
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Setting up the Window Size
-
       body: Center(
-        child: Container(
-          child: Image.asset('images/logo.png'),
-        ),
+        child: Image.asset('images/logo.png'),
       ),
     );
   }

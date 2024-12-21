@@ -9,7 +9,6 @@ export 'package:rounded_loading_button/rounded_loading_button.dart';
 export 'dart:async';
 export 'package:flutter/gestures.dart';
 export 'package:desktop_search_a_holic/dashboard.dart';
-export 'package:desktop_search_a_holic/firebase_.dart';
 export 'package:desktop_search_a_holic/registration.dart';
 export 'package:desktop_search_a_holic/system.dart';
 export 'apicalls.dart';

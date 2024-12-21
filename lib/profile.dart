@@ -1,220 +1,84 @@
-import 'dart:convert';
-import 'package:firedart/firedart.dart';
-import 'package:firedart/firestore/firestore.dart';
-import 'package:desktop_search_a_holic/imports.dart';
-// import 'package:flutter/material.dart';
-import 'package:desktop_search_a_holic/sidebar.dart';
+import 'package:flutter/material.dart';
 
-// import 'editProduct.dart';
-//import 'package:searchaholic/textBox.dart';
+class Profile extends StatefulWidget {
+  const Profile({super.key});
 
-// ignore: camel_case_types
-class profile extends StatefulWidget {
-  const profile({
-    super.key,
-  });
-  //const profile({super.key});
   @override
-  State<profile> createState() => _profileState();
+  _ProfileState createState() => _ProfileState();
 }
 
-class _profileState extends State<profile> {
-  dynamic Store_name;
-  dynamic Email;
-  dynamic Phone_number;
-  dynamic address_l1;
-  //dynamic password;
-
-  ///getting profile data from databae
-  Future getprofile() async {
-    Directory directory = await getApplicationDocumentsDirectory();
-    String path = directory.path;
-    // Directory folder = Directory('$path/desktop_search_a_holic');
-
-    // getting the email from the user.json file
-    File file = File('$path/SeachAHolic/user.json');
-    String email = jsonDecode(file.readAsStringSync())['email'];
-
-    // Getting Documents from Firestore
-    var data = Firestore.instance.collection(email);
-    var data1 = data.document('Store Details');
-    var data2 = await data1.get();
-
-    setState(() {
-      Store_name = data2['storeName'];
-      Email = data2['email'];
-      Phone_number = data2['phNo'];
-      address_l1 = data2['storeLocation'];
-      //password = data2['password'];
-    });
-  }
+class _ProfileState extends State<Profile> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
 
   @override
-// Update State
   void initState() {
-    getprofile();
     super.initState();
+    _loadDummyProfileData();
+  }
+
+  void _loadDummyProfileData() {
+    // Dummy data for profile
+    var dummyProfileData = {
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "phone": "123-456-7890",
+    };
+
+    _nameController.text = dummyProfileData['name']!;
+    _emailController.text = dummyProfileData['email']!;
+    _phoneController.text = dummyProfileData['phone']!;
+  }
+
+  void _saveProfile() {
+    // Dummy save logic
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profile saved successfully!')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Form(
-      child: Row(children: [
-        Sidebar(),
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(left: 10, right: 10),
-            child: Column(children: [
-              ///Image with store name
-              Container(
-                child: Center(
-                  child: Text('$Store_name',
-                      style: TextStyle(
-                        fontFamily: "Montserrat",
-                        fontWeight: FontWeight.w500,
-                        color: Color.fromARGB(255, 255, 255, 255),
-                        fontSize: MediaQuery.of(context).size.width / 13,
-                      )),
-                ),
-                height: MediaQuery.of(context).size.height * 0.32,
-                width: MediaQuery.of(context).size.width,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('images/profile.jpg'),
-                    fit: BoxFit.fill,
-                  ),
-                  shape: BoxShape.rectangle,
-                ),
+      appBar: AppBar(
+        title: const Text('Profile'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(),
               ),
-
-              ///store name
-              Container(
-                margin: EdgeInsets.only(
-                    top: MediaQuery.of(context).size.height * 0.057),
-                width: MediaQuery.of(context).size.width * 0.6,
-                // Options [Public or Private]
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                    border:
-                        Border.all(color: Color.fromARGB(255, 92, 154, 241))),
-                child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height,
-                    ),
-                    child: Text(
-                      "  Store Name :             $Store_name",
-                      style: TextStyle(
-                        fontFamily: "Montserrat",
-                        fontWeight: FontWeight.w500,
-                        fontSize: MediaQuery.of(context).size.width / 50,
-                      ),
-                    )),
+            ),
+            const SizedBox(height: 16.0),
+            TextFormField(
+              controller: _emailController,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
               ),
-
-              ///Phone Number
-              Container(
-                margin: EdgeInsets.only(
-                    top: MediaQuery.of(context).size.height * 0.057),
-                width: MediaQuery.of(context).size.width * 0.6,
-                // Options [Public or Private]
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                    border:
-                        Border.all(color: Color.fromARGB(255, 92, 154, 241))),
-                child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height,
-                    ),
-                    child: Text(
-                      "  Phone No :                $Phone_number",
-                      style: TextStyle(
-                        fontFamily: "Montserrat",
-                        fontWeight: FontWeight.w500,
-                        fontSize: MediaQuery.of(context).size.width / 50,
-                      ),
-                    )),
+            ),
+            const SizedBox(height: 16.0),
+            TextFormField(
+              controller: _phoneController,
+              decoration: const InputDecoration(
+                labelText: 'Phone',
+                border: OutlineInputBorder(),
               ),
-
-              ///Address
-              Container(
-                margin: EdgeInsets.only(
-                    top: MediaQuery.of(context).size.height * 0.057),
-                width: MediaQuery.of(context).size.width * 0.6,
-                // Options [Public or Private]
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                    border:
-                        Border.all(color: Color.fromARGB(255, 92, 154, 241))),
-                child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height,
-                    ),
-                    child: Text(
-                      "  Address :    $address_l1",
-                      style: TextStyle(
-                        fontFamily: "Montserrat",
-                        fontWeight: FontWeight.w500,
-                        fontSize: MediaQuery.of(context).size.width / 50,
-                      ),
-                    )),
-              ),
-
-              ///Email
-              Container(
-                margin: EdgeInsets.only(
-                    top: MediaQuery.of(context).size.height * 0.057),
-                width: MediaQuery.of(context).size.width * 0.6,
-                // Options [Public or Private]
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(20)),
-                    border:
-                        Border.all(color: Color.fromARGB(255, 92, 154, 241))),
-                child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: MediaQuery.of(context).size.height,
-                    ),
-                    child: Text(
-                      "  Email :                        $Email",
-                      style: TextStyle(
-                        fontFamily: "Montserrat",
-                        fontWeight: FontWeight.w500,
-                        fontSize: MediaQuery.of(context).size.width / 50,
-                      ),
-                    )),
-              ),
-
-              ///Edit Button
-              // Container(
-              //   margin: EdgeInsets.only(
-              //       top: MediaQuery.of(context).size.height * 0.057),
-              //   child: ElevatedButton(
-              //     onPressed: () {
-              //       // print value is updated
-              //       print("Profile Updated");
-              //       /*Navigator.push(
-              //         context,
-              //         MaterialPageRoute(
-              //             builder: (context) => EditProduct(
-              //                   email: '',
-              //                   productID: '',
-              //                 )),
-              //       );*/
-              //     },
-              //     style: ElevatedButton.styleFrom(
-              //       primary: Colors.blue,
-              //       shape: RoundedRectangleBorder(
-              //           borderRadius: BorderRadius.circular(10)),
-              //     ),
-              //     child: const Text("Update",
-              //         style: TextStyle(color: Colors.white)),
-              //   ),
-              // ),
-            ]),
-          ),
+            ),
+            const SizedBox(height: 16.0),
+            ElevatedButton(
+              onPressed: _saveProfile,
+              child: const Text('Save Profile'),
+            ),
+          ],
         ),
-      ]),
-    ));
-    //]));
+      ),
+    );
   }
 }
