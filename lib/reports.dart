@@ -45,21 +45,51 @@ class _ReportsState extends State<Reports> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reports'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue, const Color.fromARGB(255, 73, 206, 195)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: const Text('Reports',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: Row(
         children: [
           const Sidebar(),
           Expanded(
-            child: Padding(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.lightBlueAccent,
+                    const Color.fromARGB(141, 178, 255, 89)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
               padding: const EdgeInsets.all(16.0),
               child: ListView.builder(
                 itemCount: reports.length,
                 itemBuilder: (context, index) {
                   return Card(
+                    color: Colors.white, // Background color
+                    elevation: 4.0,
                     child: ListTile(
-                      title: Text(reports[index]['title']),
-                      subtitle: Text(reports[index]['description']),
+                      title: Text(
+                        reports[index]['title'],
+                        style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w700), // Text color
+                      ),
+                      subtitle: Text(
+                        reports[index]['description'],
+                        style: const TextStyle(color: Colors.black),
+                      ),
                       onTap: () => _showReportDetails(
                         reports[index]['title'],
                         reports[index]['description'],

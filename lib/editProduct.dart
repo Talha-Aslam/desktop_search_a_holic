@@ -59,9 +59,30 @@ class _EditProductState extends State<EditProduct> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Product'),
-      ),
-      body: Padding(
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue, const Color.fromARGB(255, 73, 206, 195)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          title: const Text(
+            'Edit Product',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          )),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.lightBlueAccent,
+              const Color.fromARGB(141, 178, 255, 89)
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
@@ -72,6 +93,8 @@ class _EditProductState extends State<EditProduct> {
                 decoration: const InputDecoration(
                   labelText: 'Product Name',
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -86,6 +109,8 @@ class _EditProductState extends State<EditProduct> {
                 decoration: const InputDecoration(
                   labelText: 'Product Price',
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -100,6 +125,8 @@ class _EditProductState extends State<EditProduct> {
                 decoration: const InputDecoration(
                   labelText: 'Product Quantity',
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -114,6 +141,8 @@ class _EditProductState extends State<EditProduct> {
                 decoration: const InputDecoration(
                   labelText: 'Product Type',
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -128,6 +157,8 @@ class _EditProductState extends State<EditProduct> {
                 decoration: const InputDecoration(
                   labelText: 'Product Category',
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -142,6 +173,8 @@ class _EditProductState extends State<EditProduct> {
                 decoration: const InputDecoration(
                   labelText: 'Product Expiry Date',
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -153,6 +186,11 @@ class _EditProductState extends State<EditProduct> {
               const SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: _saveProduct,
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  backgroundColor:
+                      Colors.white.withOpacity(0.7), // Button text color
+                ),
                 child: const Text('Save Product'),
               ),
             ],

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DataStorage extends ChangeNotifier {
-  List<Map<String, dynamic>> _products = [];
+  final List<Map<String, dynamic>> _products = [];
   String _password = "password"; // Default password
 
   List<Map<String, dynamic>> get products => _products;

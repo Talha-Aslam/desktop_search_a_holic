@@ -38,9 +38,28 @@ class _ChangePasswordState extends State<ChangePassword> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue, const Color.fromARGB(255, 73, 206, 195)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: const Text('Change Password'),
       ),
-      body: Padding(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.lightBlueAccent,
+              const Color.fromARGB(141, 178, 255, 89)
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
@@ -51,6 +70,8 @@ class _ChangePasswordState extends State<ChangePassword> {
                 decoration: const InputDecoration(
                   labelText: 'Old Password',
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
                 obscureText: true,
                 validator: (value) {
@@ -66,6 +87,8 @@ class _ChangePasswordState extends State<ChangePassword> {
                 decoration: const InputDecoration(
                   labelText: 'New Password',
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
                 obscureText: true,
                 validator: (value) {
@@ -81,6 +104,8 @@ class _ChangePasswordState extends State<ChangePassword> {
                 decoration: const InputDecoration(
                   labelText: 'Confirm Password',
                   border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
                 obscureText: true,
                 validator: (value) {
@@ -96,6 +121,11 @@ class _ChangePasswordState extends State<ChangePassword> {
               const SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: _changePassword,
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  backgroundColor:
+                      Colors.white.withOpacity(0.7), // Button text color
+                ),
                 child: const Text('Change Password'),
               ),
             ],

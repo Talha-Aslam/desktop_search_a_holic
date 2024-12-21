@@ -42,9 +42,29 @@ class _ProfileState extends State<Profile> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue, const Color.fromARGB(255, 73, 206, 195)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: const Text('Profile',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
-      body: Padding(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.lightBlueAccent,
+              const Color.fromARGB(141, 178, 255, 89)
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
@@ -53,6 +73,8 @@ class _ProfileState extends State<Profile> {
               decoration: const InputDecoration(
                 labelText: 'Name',
                 border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
               ),
             ),
             const SizedBox(height: 16.0),
@@ -61,6 +83,8 @@ class _ProfileState extends State<Profile> {
               decoration: const InputDecoration(
                 labelText: 'Email',
                 border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
               ),
             ),
             const SizedBox(height: 16.0),
@@ -69,12 +93,23 @@ class _ProfileState extends State<Profile> {
               decoration: const InputDecoration(
                 labelText: 'Phone',
                 border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
               ),
             ),
             const SizedBox(height: 16.0),
             ElevatedButton(
               onPressed: _saveProfile,
-              child: const Text('Save Profile'),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.blue,
+                backgroundColor:
+                    Colors.white.withOpacity(0.7), // Button text color
+              ),
+              child: const Text('Save Profile',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.blue)),
             ),
           ],
         ),

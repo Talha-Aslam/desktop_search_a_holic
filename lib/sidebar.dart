@@ -11,13 +11,14 @@ class Sidebar extends StatelessWidget {
         children: <Widget>[
           const DrawerHeader(
             decoration: BoxDecoration(
-              color: Colors.blue,
+              color: Color.fromARGB(255, 34, 120, 218),
             ),
             child: Text(
               'Menu',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 24,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -85,14 +86,33 @@ class Sidebar extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Logout'),
+            leading: const Icon(Icons.chat),
+            title: const Text('ChatBot'),
             onTap: () {
-              Navigator.pushNamed(context, '/login');
+              Navigator.pushNamed(context, '/chatBot');
+            },
+          ),
+          _buildListTile(
+            icon: Icons.logout,
+            text: 'Logout',
+            onTap: () {
+              Navigator.pushNamedAndRemoveUntil(
+                  context, '/login', (Route<dynamic> route) => false);
             },
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildListTile(
+      {required IconData icon,
+      required String text,
+      required VoidCallback onTap}) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(text),
+      onTap: onTap,
     );
   }
 }

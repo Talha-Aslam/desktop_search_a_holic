@@ -1,4 +1,5 @@
 import 'package:desktop_search_a_holic/change_password.dart';
+import 'package:desktop_search_a_holic/chatBot.dart';
 import 'package:desktop_search_a_holic/imports.dart';
 import 'package:desktop_search_a_holic/addProduct.dart';
 import 'package:desktop_search_a_holic/biCharts.dart';
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
         '/invoices': (context) => const Invoice(),
         '/reports': (context) => const Reports(),
         '/biCharts': (context) => const BiCharts(),
+        '/chatBot': (context) => ChatBotPage(),
         '/changePassword': (context) => const ChangePassword(),
         '/login': (context) => const Login(),
         '/newOrder': (context) => const NewOrder(),
