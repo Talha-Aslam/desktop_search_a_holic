@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
 import 'package:desktop_search_a_holic/sidebar.dart';
+import 'package:provider/provider.dart';
+import 'package:desktop_search_a_holic/theme_provider.dart';
+import 'package:intl/intl.dart';
 
 class Reports extends StatefulWidget {
   const Reports({super.key});
@@ -12,6 +15,10 @@ class Reports extends StatefulWidget {
 
 class _ReportsState extends State<Reports> {
   List<Map<String, dynamic>> reports = [];
+  String _selectedPeriod = 'All';
+  String _selectedType = 'All';
+  String _sortBy = 'Date (Latest)';
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -20,42 +27,424 @@ class _ReportsState extends State<Reports> {
   }
 
   void _loadDummyReports() {
-    // Dummy data for reports
-    var dummyReports = [
-      {"title": "Report 1", "description": "This is the first report."},
-      {"title": "Report 2", "description": "This is the second report."},
-      {"title": "Report 3", "description": "This is the third report."},
-    ];
+    // Simulate loading time
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      // Dummy data for reports with more comprehensive information
+      var dummyReports = [
+        {
+          "id": "R001",
+          "title": "Monthly Sales Summary",
+          "description": "Overall sales performance for the last month.",
+          "type": "Sales",
+          "date": DateTime.now().subtract(const Duration(days: 2)),
+          "status": "Completed",
+          "data": {
+            "totalSales": 24500,
+            "itemsSold": 132,
+            "topProduct": "Paracetamol 500mg"
+          }
+        },
+        {
+          "id": "R002",
+          "title": "Inventory Status Report",
+          "description":
+              "Current inventory levels and items that need reordering.",
+          "type": "Inventory",
+          "date": DateTime.now().subtract(const Duration(days: 5)),
+          "status": "Completed",
+          "data": {"totalItems": 246, "lowStock": 18, "outOfStock": 3}
+        },
+        {
+          "id": "R003",
+          "title": "Customer Insights",
+          "description":
+              "Analysis of customer behaviors and frequent purchases.",
+          "type": "Customer",
+          "date": DateTime.now().subtract(const Duration(days: 8)),
+          "status": "Completed",
+          "data": {
+            "totalCustomers": 85,
+            "newCustomers": 12,
+            "repeatCustomers": 68
+          }
+        },
+        {
+          "id": "R004",
+          "title": "Quarterly Financial Report",
+          "description":
+              "Financial performance for the last quarter including revenue and expenses.",
+          "type": "Financial",
+          "date": DateTime.now().subtract(const Duration(days: 15)),
+          "status": "Completed",
+          "data": {"revenue": 78400, "expenses": 52600, "profit": 25800}
+        },
+        {
+          "id": "R005",
+          "title": "Product Performance Analysis",
+          "description": "Analysis of best and worst performing products.",
+          "type": "Products",
+          "date": DateTime.now().subtract(const Duration(days: 20)),
+          "status": "Completed",
+          "data": {
+            "topSellingProduct": "Aspirin 300mg",
+            "worstSellingProduct": "Vitamin B Complex",
+            "totalProducts": 120
+          }
+        },
+        {
+          "id": "R006",
+          "title": "Annual Business Overview",
+          "description":
+              "Comprehensive annual business overview with forecasts.",
+          "type": "Financial",
+          "date": DateTime.now().subtract(const Duration(days: 60)),
+          "status": "Completed",
+          "data": {
+            "annualRevenue": 285000,
+            "growthRate": "12.5%",
+            "projectedGrowth": "15.2%"
+          }
+        },
+        {
+          "id": "R007",
+          "title": "Supply Chain Performance",
+          "description":
+              "Analysis of supply chain efficiency and vendor relations.",
+          "type": "Inventory",
+          "date": DateTime.now().subtract(const Duration(days: 25)),
+          "status": "Pending",
+          "data": {
+            "onTimeDelivery": "92%",
+            "averageDeliveryTime": "3.2 days",
+            "topVendor": "MediSupplier Inc."
+          }
+        },
+      ];
 
-    setState(() {
-      reports = dummyReports;
+      setState(() {
+        reports = dummyReports;
+        _isLoading = false;
+      });
     });
   }
 
-  void _showReportDetails(String title, String description) {
-    QuickAlert.show(
+  void _showReportDetails(
+      Map<String, dynamic> report, ThemeProvider themeProvider) {
+    showDialog(
       context: context,
-      type: QuickAlertType.info,
-      title: title,
-      text: description,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: themeProvider.cardBackgroundColor,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.6,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: _getReportTypeColor(report['type'])
+                            .withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        _getReportTypeIcon(report['type']),
+                        color: _getReportTypeColor(report['type']),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            report['title'],
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: themeProvider.textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Report #${report['id']} • ${DateFormat('MMM dd, yyyy').format(report['date'])}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: themeProvider.textColor.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: report['status'] == 'Completed'
+                            ? Colors.green.withOpacity(0.2)
+                            : Colors.orange.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        report['status'],
+                        style: TextStyle(
+                          color: report['status'] == 'Completed'
+                              ? Colors.green
+                              : Colors.orange,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Description
+                Text(
+                  'Description',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: themeProvider.textColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  report['description'],
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: themeProvider.textColor.withOpacity(0.8),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Data points
+                Text(
+                  'Key Metrics',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: themeProvider.textColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Data grid
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    childAspectRatio: 2.5,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: report['data'].length,
+                  itemBuilder: (context, index) {
+                    String key = report['data'].keys.elementAt(index);
+                    dynamic value = report['data'][key];
+
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: themeProvider.isDarkMode
+                            ? Colors.grey.shade800
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _formatKey(key),
+                            style: TextStyle(
+                              color: themeProvider.textColor.withOpacity(0.7),
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            value.toString(),
+                            style: TextStyle(
+                              color: themeProvider.textColor,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Actions
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Close',
+                        style: TextStyle(color: themeProvider.textColor),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content:
+                                Text('Report "${report['title']}" downloaded'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: themeProvider.gradientColors[0],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                      ),
+                      icon: const Icon(Icons.download),
+                      label: const Text('Download PDF'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
+  }
+
+  List<Map<String, dynamic>> _getFilteredReports() {
+    return reports.where((report) {
+      bool matchesPeriod = _selectedPeriod == 'All' ||
+          (_selectedPeriod == 'This Week' &&
+              report['date']
+                  .isAfter(DateTime.now().subtract(const Duration(days: 7)))) ||
+          (_selectedPeriod == 'This Month' &&
+              report['date'].isAfter(
+                  DateTime.now().subtract(const Duration(days: 30)))) ||
+          (_selectedPeriod == 'This Quarter' &&
+              report['date']
+                  .isAfter(DateTime.now().subtract(const Duration(days: 90))));
+
+      bool matchesType =
+          _selectedType == 'All' || report['type'] == _selectedType;
+
+      return matchesPeriod && matchesType;
+    }).toList()
+      ..sort((a, b) {
+        if (_sortBy == 'Date (Latest)') {
+          return b['date'].compareTo(a['date']);
+        } else if (_sortBy == 'Date (Oldest)') {
+          return a['date'].compareTo(b['date']);
+        } else if (_sortBy == 'Title (A-Z)') {
+          return a['title'].compareTo(b['title']);
+        } else {
+          return a['type'].compareTo(b['type']);
+        }
+      });
+  }
+
+  String _formatKey(String key) {
+    // Convert camelCase or snake_case to Title Case with spaces
+    String result = key.replaceAllMapped(
+      RegExp(r'([A-Z])'),
+      (match) => ' ${match.group(0)}',
+    );
+
+    // Replace underscores with spaces
+    result = result.replaceAll('_', ' ');
+
+    // Capitalize first letter
+    result = '${result[0].toUpperCase()}${result.substring(1)}';
+
+    return result;
+  }
+
+  IconData _getReportTypeIcon(String type) {
+    switch (type) {
+      case 'Sales':
+        return Icons.point_of_sale;
+      case 'Inventory':
+        return Icons.inventory;
+      case 'Customer':
+        return Icons.people;
+      case 'Financial':
+        return Icons.attach_money;
+      case 'Products':
+        return Icons.category;
+      default:
+        return Icons.description;
+    }
+  }
+
+  Color _getReportTypeColor(String type) {
+    switch (type) {
+      case 'Sales':
+        return Colors.blue;
+      case 'Inventory':
+        return Colors.purple;
+      case 'Customer':
+        return Colors.orange;
+      case 'Financial':
+        return Colors.green;
+      case 'Products':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final filteredReports = _getFilteredReports();
+
     return Scaffold(
       appBar: AppBar(
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.blue, const Color.fromARGB(255, 73, 206, 195)],
+              colors: themeProvider.gradientColors,
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
         ),
-        title: const Text('Reports',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Business Reports',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Reports',
+            onPressed: () {
+              setState(() {
+                _isLoading = true;
+              });
+              _loadDummyReports();
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Row(
         children: [
@@ -63,45 +452,525 @@ class _ReportsState extends State<Reports> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.lightBlueAccent,
-                    const Color.fromARGB(141, 178, 255, 89)
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: themeProvider.scaffoldBackgroundColor,
               ),
-              padding: const EdgeInsets.all(16.0),
-              child: ListView.builder(
-                itemCount: reports.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    color: Colors.white, // Background color
-                    elevation: 4.0,
-                    child: ListTile(
-                      title: Text(
-                        reports[index]['title'],
-                        style: const TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.w700), // Text color
-                      ),
-                      subtitle: Text(
-                        reports[index]['description'],
-                        style: const TextStyle(color: Colors.black),
-                      ),
-                      onTap: () => _showReportDetails(
-                        reports[index]['title'],
-                        reports[index]['description'],
-                      ),
+              child: Column(
+                children: [
+                  // Filter bar
+                  Container(
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: themeProvider.cardBackgroundColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 5,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
-                  );
-                },
+                    child: Row(
+                      children: [
+                        // Time period filter
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Time Period',
+                                style: TextStyle(
+                                  color: themeProvider.textColor,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              DropdownButtonFormField<String>(
+                                value: _selectedPeriod,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  filled: true,
+                                  fillColor: themeProvider.isDarkMode
+                                      ? Colors.grey.shade800
+                                      : Colors.grey.shade100,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                      value: 'All', child: Text('All Time')),
+                                  DropdownMenuItem(
+                                      value: 'This Week',
+                                      child: Text('This Week')),
+                                  DropdownMenuItem(
+                                      value: 'This Month',
+                                      child: Text('This Month')),
+                                  DropdownMenuItem(
+                                      value: 'This Quarter',
+                                      child: Text('This Quarter')),
+                                ],
+                                style:
+                                    TextStyle(color: themeProvider.textColor),
+                                dropdownColor:
+                                    themeProvider.cardBackgroundColor,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedPeriod = value!;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Report type filter
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Report Type',
+                                style: TextStyle(
+                                  color: themeProvider.textColor,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              DropdownButtonFormField<String>(
+                                value: _selectedType,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  filled: true,
+                                  fillColor: themeProvider.isDarkMode
+                                      ? Colors.grey.shade800
+                                      : Colors.grey.shade100,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                      value: 'All', child: Text('All Types')),
+                                  DropdownMenuItem(
+                                      value: 'Sales', child: Text('Sales')),
+                                  DropdownMenuItem(
+                                      value: 'Inventory',
+                                      child: Text('Inventory')),
+                                  DropdownMenuItem(
+                                      value: 'Customer',
+                                      child: Text('Customer')),
+                                  DropdownMenuItem(
+                                      value: 'Financial',
+                                      child: Text('Financial')),
+                                  DropdownMenuItem(
+                                      value: 'Products',
+                                      child: Text('Products')),
+                                ],
+                                style:
+                                    TextStyle(color: themeProvider.textColor),
+                                dropdownColor:
+                                    themeProvider.cardBackgroundColor,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedType = value!;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Sort by filter
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Sort By',
+                                style: TextStyle(
+                                  color: themeProvider.textColor,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              DropdownButtonFormField<String>(
+                                value: _sortBy,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  filled: true,
+                                  fillColor: themeProvider.isDarkMode
+                                      ? Colors.grey.shade800
+                                      : Colors.grey.shade100,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                      value: 'Date (Latest)',
+                                      child: Text('Date (Latest)')),
+                                  DropdownMenuItem(
+                                      value: 'Date (Oldest)',
+                                      child: Text('Date (Oldest)')),
+                                  DropdownMenuItem(
+                                      value: 'Title (A-Z)',
+                                      child: Text('Title (A-Z)')),
+                                  DropdownMenuItem(
+                                      value: 'Type', child: Text('Type')),
+                                ],
+                                style:
+                                    TextStyle(color: themeProvider.textColor),
+                                dropdownColor:
+                                    themeProvider.cardBackgroundColor,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _sortBy = value!;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Reports list
+                  Expanded(
+                    child: _isLoading
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(
+                                  color: themeProvider.gradientColors[0],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Loading reports...',
+                                  style: TextStyle(
+                                    color: themeProvider.textColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : filteredReports.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.description_outlined,
+                                      size: 64,
+                                      color: themeProvider.textColor
+                                          .withOpacity(0.5),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No reports found',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                        color: themeProvider.textColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Try changing your filters',
+                                      style: TextStyle(
+                                        color: themeProvider.textColor
+                                            .withOpacity(0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(16.0),
+                                itemCount: filteredReports.length,
+                                itemBuilder: (context, index) {
+                                  final report = filteredReports[index];
+
+                                  return Card(
+                                    color: themeProvider.cardBackgroundColor,
+                                    elevation: 2.0,
+                                    margin: const EdgeInsets.only(bottom: 16.0),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: InkWell(
+                                      onTap: () => _showReportDetails(
+                                          report, themeProvider),
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Row(
+                                          children: [
+                                            // Report icon
+                                            Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: _getReportTypeColor(
+                                                        report['type'])
+                                                    .withOpacity(0.2),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: Icon(
+                                                _getReportTypeIcon(
+                                                    report['type']),
+                                                color: _getReportTypeColor(
+                                                    report['type']),
+                                                size: 24,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            // Report details
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    report['title'],
+                                                    style: TextStyle(
+                                                      color: themeProvider
+                                                          .textColor,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    report['description'],
+                                                    style: TextStyle(
+                                                      color: themeProvider
+                                                          .textColor
+                                                          .withOpacity(0.7),
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Row(
+                                                    children: [
+                                                      Container(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .symmetric(
+                                                                horizontal: 8,
+                                                                vertical: 2),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              _getReportTypeColor(
+                                                                      report[
+                                                                          'type'])
+                                                                  .withOpacity(
+                                                                      0.1),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(4),
+                                                        ),
+                                                        child: Text(
+                                                          report['type'],
+                                                          style: TextStyle(
+                                                            color:
+                                                                _getReportTypeColor(
+                                                                    report[
+                                                                        'type']),
+                                                            fontSize: 12,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        'Report #${report['id']}',
+                                                        style: TextStyle(
+                                                          color: themeProvider
+                                                              .textColor
+                                                              .withOpacity(0.5),
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+
+                                            // Status and date
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              children: [
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: report['status'] ==
+                                                            'Completed'
+                                                        ? Colors.green
+                                                            .withOpacity(0.2)
+                                                        : Colors.orange
+                                                            .withOpacity(0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                  ),
+                                                  child: Text(
+                                                    report['status'],
+                                                    style: TextStyle(
+                                                      color: report['status'] ==
+                                                              'Completed'
+                                                          ? Colors.green
+                                                          : Colors.orange,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  DateFormat('MMM dd, yyyy')
+                                                      .format(report['date']),
+                                                  style: TextStyle(
+                                                    color: themeProvider
+                                                        .textColor
+                                                        .withOpacity(0.7),
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                  ),
+
+                  // Summary bar
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: themeProvider.cardBackgroundColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 5,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildSummaryItem(
+                          context,
+                          'Total Reports',
+                          reports.length.toString(),
+                          Icons.description,
+                        ),
+                        _buildSummaryItem(
+                          context,
+                          'Sales Reports',
+                          reports
+                              .where((r) => r['type'] == 'Sales')
+                              .length
+                              .toString(),
+                          Icons.point_of_sale,
+                        ),
+                        _buildSummaryItem(
+                          context,
+                          'Financial Reports',
+                          reports
+                              .where((r) => r['type'] == 'Financial')
+                              .length
+                              .toString(),
+                          Icons.attach_money,
+                        ),
+                        _buildSummaryItem(
+                          context,
+                          'This Month',
+                          reports
+                              .where((r) => r['date'].isAfter(DateTime.now()
+                                  .subtract(const Duration(days: 30))))
+                              .length
+                              .toString(),
+                          Icons.today,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Generate new report
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.success,
+            title: 'New Report',
+            text: 'Your report is being generated. It will be available soon.',
+            confirmBtnColor: themeProvider.gradientColors[0],
+            backgroundColor: themeProvider.cardBackgroundColor,
+            titleColor: themeProvider.textColor,
+            textColor: themeProvider.textColor.withOpacity(0.8),
+          );
+        },
+        backgroundColor: themeProvider.gradientColors[0],
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(
+      BuildContext context, String title, String value, IconData icon) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
+    return Column(
+      children: [
+        Icon(
+          icon,
+          color: themeProvider.gradientColors[0],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: themeProvider.textColor,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        Text(
+          title,
+          style: TextStyle(
+            color: themeProvider.textColor.withOpacity(0.7),
+            fontSize: 12,
+          ),
+        ),
+      ],
     );
   }
 }
