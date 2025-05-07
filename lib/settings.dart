@@ -85,386 +85,388 @@ class _SettingsState extends State<Settings> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Row(
-        children: [
-          const Sidebar(),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: themeProvider.scaffoldBackgroundColor,
-              ),
-              child: ListView(
-                padding: const EdgeInsets.all(16.0),
-                children: [
-                  // Theme settings section
-                  _buildSectionHeader(context, 'Theme Settings'),
-                  Card(
-                    color: themeProvider.cardBackgroundColor,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildSettingTile(
-                          title: 'Dark Mode',
-                          subtitle: 'Enable dark theme for the application',
-                          icon: Icons.dark_mode,
-                          trailing: Switch(
-                            value: themeProvider.isDarkMode,
-                            activeColor: themeProvider.gradientColors[0],
-                            onChanged: (value) {
+      body: SafeArea(
+        child: Row(
+          children: [
+            const Sidebar(),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: themeProvider.scaffoldBackgroundColor,
+                ),
+                child: ListView(
+                  padding: const EdgeInsets.all(16.0),
+                  children: [
+                    // Theme settings section
+                    _buildSectionHeader(context, 'Theme Settings'),
+                    Card(
+                      color: themeProvider.cardBackgroundColor,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildSettingTile(
+                            title: 'Dark Mode',
+                            subtitle: 'Enable dark theme for the application',
+                            icon: Icons.dark_mode,
+                            trailing: Switch(
+                              value: themeProvider.isDarkMode,
+                              activeColor: themeProvider.gradientColors[0],
+                              onChanged: (value) {
+                                themeProvider.toggleTheme();
+                              },
+                            ),
+                            onTap: () {
                               themeProvider.toggleTheme();
                             },
+                            themeProvider: themeProvider,
                           ),
-                          onTap: () {
-                            themeProvider.toggleTheme();
-                          },
-                          themeProvider: themeProvider,
-                        ),
-                        _buildDivider(),
-                        _buildSettingTile(
-                          title: 'Compact Mode',
-                          subtitle: 'Reduce spacing in lists and views',
-                          icon: Icons.format_size,
-                          trailing: Switch(
-                            value: _compactMode,
-                            activeColor: themeProvider.gradientColors[0],
-                            onChanged: (value) {
+                          _buildDivider(),
+                          _buildSettingTile(
+                            title: 'Compact Mode',
+                            subtitle: 'Reduce spacing in lists and views',
+                            icon: Icons.format_size,
+                            trailing: Switch(
+                              value: _compactMode,
+                              activeColor: themeProvider.gradientColors[0],
+                              onChanged: (value) {
+                                setState(() {
+                                  _compactMode = value;
+                                });
+                              },
+                            ),
+                            onTap: () {
                               setState(() {
-                                _compactMode = value;
+                                _compactMode = !_compactMode;
                               });
                             },
+                            themeProvider: themeProvider,
                           ),
-                          onTap: () {
-                            setState(() {
-                              _compactMode = !_compactMode;
-                            });
-                          },
-                          themeProvider: themeProvider,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // General settings section
-                  _buildSectionHeader(context, 'General Settings'),
-                  Card(
-                    color: themeProvider.cardBackgroundColor,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildSettingTile(
-                          title: 'Default View',
-                          subtitle: 'Choose which screen to show on startup',
-                          icon: Icons.home,
-                          trailing: DropdownButton<String>(
-                            value: _defaultView,
-                            dropdownColor: themeProvider.cardBackgroundColor,
-                            style: TextStyle(color: themeProvider.textColor),
-                            underline: Container(
-                              height: 0,
-                            ),
-                            onChanged: (String? newValue) {
-                              if (newValue != null) {
-                                setState(() {
-                                  _defaultView = newValue;
-                                });
-                              }
-                            },
-                            items: <String>[
-                              'Dashboard',
-                              'Products',
-                              'Orders',
-                              'Reports',
-                              'Analytics'
-                            ].map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                          ),
-                          themeProvider: themeProvider,
-                        ),
-                        _buildDivider(),
-                        _buildSettingTile(
-                          title: 'Language',
-                          subtitle: 'Choose your preferred language',
-                          icon: Icons.language,
-                          trailing: DropdownButton<String>(
-                            value: _language,
-                            dropdownColor: themeProvider.cardBackgroundColor,
-                            style: TextStyle(color: themeProvider.textColor),
-                            underline: Container(
-                              height: 0,
-                            ),
-                            onChanged: (String? newValue) {
-                              if (newValue != null) {
-                                setState(() {
-                                  _language = newValue;
-                                });
-                              }
-                            },
-                            items: <String>[
-                              'English',
-                              'Spanish',
-                              'French',
-                              'German',
-                              'Arabic'
-                            ].map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                          ),
-                          themeProvider: themeProvider,
-                        ),
-                        _buildDivider(),
-                        _buildSettingTile(
-                          title: 'Data Refresh Rate',
-                          subtitle: 'How often to refresh data automatically',
-                          icon: Icons.refresh,
-                          trailing: DropdownButton<String>(
-                            value: _dataRefreshRate,
-                            dropdownColor: themeProvider.cardBackgroundColor,
-                            style: TextStyle(color: themeProvider.textColor),
-                            underline: Container(
-                              height: 0,
-                            ),
-                            onChanged: (String? newValue) {
-                              if (newValue != null) {
-                                setState(() {
-                                  _dataRefreshRate = newValue;
-                                });
-                              }
-                            },
-                            items: <String>[
-                              'Every 5 minutes',
-                              'Every 15 minutes',
-                              'Every 30 minutes',
-                              'Every hour',
-                              'Manual refresh only'
-                            ].map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                          ),
-                          themeProvider: themeProvider,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Notifications section
-                  _buildSectionHeader(context, 'Notifications & Data'),
-                  Card(
-                    color: themeProvider.cardBackgroundColor,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildSettingTile(
-                          title: 'Notifications',
-                          subtitle: 'Enable or disable system notifications',
-                          icon: Icons.notifications,
-                          trailing: Switch(
-                            value: _notificationsEnabled,
-                            activeColor: themeProvider.gradientColors[0],
-                            onChanged: (value) {
-                              setState(() {
-                                _notificationsEnabled = value;
-                              });
-                            },
-                          ),
-                          onTap: () {
-                            setState(() {
-                              _notificationsEnabled = !_notificationsEnabled;
-                            });
-                          },
-                          themeProvider: themeProvider,
-                        ),
-                        _buildDivider(),
-                        _buildSettingTile(
-                          title: 'Automatic Backup',
-                          subtitle: 'Automatically backup your data daily',
-                          icon: Icons.backup,
-                          trailing: Switch(
-                            value: _autoBackupEnabled,
-                            activeColor: themeProvider.gradientColors[0],
-                            onChanged: (value) {
-                              setState(() {
-                                _autoBackupEnabled = value;
-                              });
-                            },
-                          ),
-                          onTap: () {
-                            setState(() {
-                              _autoBackupEnabled = !_autoBackupEnabled;
-                            });
-                          },
-                          themeProvider: themeProvider,
-                        ),
-                        _buildDivider(),
-                        _buildSettingTile(
-                          title: 'Backup Now',
-                          subtitle: 'Create a manual backup of all your data',
-                          icon: Icons.save,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Backup started...'),
+                    // General settings section
+                    _buildSectionHeader(context, 'General Settings'),
+                    Card(
+                      color: themeProvider.cardBackgroundColor,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildSettingTile(
+                            title: 'Default View',
+                            subtitle: 'Choose which screen to show on startup',
+                            icon: Icons.home,
+                            trailing: DropdownButton<String>(
+                              value: _defaultView,
+                              dropdownColor: themeProvider.cardBackgroundColor,
+                              style: TextStyle(color: themeProvider.textColor),
+                              underline: Container(
+                                height: 0,
                               ),
-                            );
-                            // Simulate backup process
-                            Future.delayed(const Duration(seconds: 2), () {
+                              onChanged: (String? newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    _defaultView = newValue;
+                                  });
+                                }
+                              },
+                              items: <String>[
+                                'Dashboard',
+                                'Products',
+                                'Orders',
+                                'Reports',
+                                'Analytics'
+                              ].map<DropdownMenuItem<String>>((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                            ),
+                            themeProvider: themeProvider,
+                          ),
+                          _buildDivider(),
+                          _buildSettingTile(
+                            title: 'Language',
+                            subtitle: 'Choose your preferred language',
+                            icon: Icons.language,
+                            trailing: DropdownButton<String>(
+                              value: _language,
+                              dropdownColor: themeProvider.cardBackgroundColor,
+                              style: TextStyle(color: themeProvider.textColor),
+                              underline: Container(
+                                height: 0,
+                              ),
+                              onChanged: (String? newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    _language = newValue;
+                                  });
+                                }
+                              },
+                              items: <String>[
+                                'English',
+                                'Spanish',
+                                'French',
+                                'German',
+                                'Arabic'
+                              ].map<DropdownMenuItem<String>>((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                            ),
+                            themeProvider: themeProvider,
+                          ),
+                          _buildDivider(),
+                          _buildSettingTile(
+                            title: 'Data Refresh Rate',
+                            subtitle: 'How often to refresh data automatically',
+                            icon: Icons.refresh,
+                            trailing: DropdownButton<String>(
+                              value: _dataRefreshRate,
+                              dropdownColor: themeProvider.cardBackgroundColor,
+                              style: TextStyle(color: themeProvider.textColor),
+                              underline: Container(
+                                height: 0,
+                              ),
+                              onChanged: (String? newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    _dataRefreshRate = newValue;
+                                  });
+                                }
+                              },
+                              items: <String>[
+                                'Every 5 minutes',
+                                'Every 15 minutes',
+                                'Every 30 minutes',
+                                'Every hour',
+                                'Manual refresh only'
+                              ].map<DropdownMenuItem<String>>((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Text(value),
+                                );
+                              }).toList(),
+                            ),
+                            themeProvider: themeProvider,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Notifications section
+                    _buildSectionHeader(context, 'Notifications & Data'),
+                    Card(
+                      color: themeProvider.cardBackgroundColor,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildSettingTile(
+                            title: 'Notifications',
+                            subtitle: 'Enable or disable system notifications',
+                            icon: Icons.notifications,
+                            trailing: Switch(
+                              value: _notificationsEnabled,
+                              activeColor: themeProvider.gradientColors[0],
+                              onChanged: (value) {
+                                setState(() {
+                                  _notificationsEnabled = value;
+                                });
+                              },
+                            ),
+                            onTap: () {
+                              setState(() {
+                                _notificationsEnabled = !_notificationsEnabled;
+                              });
+                            },
+                            themeProvider: themeProvider,
+                          ),
+                          _buildDivider(),
+                          _buildSettingTile(
+                            title: 'Automatic Backup',
+                            subtitle: 'Automatically backup your data daily',
+                            icon: Icons.backup,
+                            trailing: Switch(
+                              value: _autoBackupEnabled,
+                              activeColor: themeProvider.gradientColors[0],
+                              onChanged: (value) {
+                                setState(() {
+                                  _autoBackupEnabled = value;
+                                });
+                              },
+                            ),
+                            onTap: () {
+                              setState(() {
+                                _autoBackupEnabled = !_autoBackupEnabled;
+                              });
+                            },
+                            themeProvider: themeProvider,
+                          ),
+                          _buildDivider(),
+                          _buildSettingTile(
+                            title: 'Backup Now',
+                            subtitle: 'Create a manual backup of all your data',
+                            icon: Icons.save,
+                            onTap: () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content:
-                                      Text('Backup completed successfully'),
-                                  backgroundColor: Colors.green,
+                                  content: Text('Backup started...'),
                                 ),
                               );
-                            });
-                          },
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: Colors.grey,
+                              // Simulate backup process
+                              Future.delayed(const Duration(seconds: 2), () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text('Backup completed successfully'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              });
+                            },
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            themeProvider: themeProvider,
                           ),
-                          themeProvider: themeProvider,
-                        ),
-                        _buildDivider(),
-                        _buildSettingTile(
-                          title: 'Clear Cache',
-                          subtitle: 'Remove temporary files to free up space',
-                          icon: Icons.cleaning_services,
-                          onTap: () {
-                            _showClearCacheDialog(context, themeProvider);
-                          },
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: Colors.grey,
+                          _buildDivider(),
+                          _buildSettingTile(
+                            title: 'Clear Cache',
+                            subtitle: 'Remove temporary files to free up space',
+                            icon: Icons.cleaning_services,
+                            onTap: () {
+                              _showClearCacheDialog(context, themeProvider);
+                            },
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            themeProvider: themeProvider,
                           ),
-                          themeProvider: themeProvider,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // About section
-                  _buildSectionHeader(context, 'About'),
-                  Card(
-                    color: themeProvider.cardBackgroundColor,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildSettingTile(
-                          title: 'App Version',
-                          subtitle: 'v1.0.0 (Build 2025.05.08)',
-                          icon: Icons.info,
-                          themeProvider: themeProvider,
-                        ),
-                        _buildDivider(),
-                        _buildSettingTile(
-                          title: 'Terms of Service',
-                          subtitle: 'Read the terms and conditions',
-                          icon: Icons.description,
-                          onTap: () {
-                            _showTermsDialog(context, themeProvider);
-                          },
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: Colors.grey,
-                          ),
-                          themeProvider: themeProvider,
-                        ),
-                        _buildDivider(),
-                        _buildSettingTile(
-                          title: 'Privacy Policy',
-                          subtitle: 'How we handle your data',
-                          icon: Icons.privacy_tip,
-                          onTap: () {
-                            _showPrivacyDialog(context, themeProvider);
-                          },
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: Colors.grey,
-                          ),
-                          themeProvider: themeProvider,
-                        ),
-                        _buildDivider(),
-                        _buildSettingTile(
-                          title: 'Check for Updates',
-                          subtitle: 'Check if a new version is available',
-                          icon: Icons.system_update,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('You have the latest version'),
-                              ),
-                            );
-                          },
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: Colors.grey,
-                          ),
-                          themeProvider: themeProvider,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Save button
-                  Center(
-                    child: ElevatedButton.icon(
-                      onPressed: _saveSettings,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: themeProvider.gradientColors[0],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      icon: const Icon(Icons.save),
-                      label: const Text(
-                        'Save Settings',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
+                    const SizedBox(height: 24),
+
+                    // About section
+                    _buildSectionHeader(context, 'About'),
+                    Card(
+                      color: themeProvider.cardBackgroundColor,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildSettingTile(
+                            title: 'App Version',
+                            subtitle: 'v1.0.0 (Build 2025.05.08)',
+                            icon: Icons.info,
+                            themeProvider: themeProvider,
+                          ),
+                          _buildDivider(),
+                          _buildSettingTile(
+                            title: 'Terms of Service',
+                            subtitle: 'Read the terms and conditions',
+                            icon: Icons.description,
+                            onTap: () {
+                              _showTermsDialog(context, themeProvider);
+                            },
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            themeProvider: themeProvider,
+                          ),
+                          _buildDivider(),
+                          _buildSettingTile(
+                            title: 'Privacy Policy',
+                            subtitle: 'How we handle your data',
+                            icon: Icons.privacy_tip,
+                            onTap: () {
+                              _showPrivacyDialog(context, themeProvider);
+                            },
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            themeProvider: themeProvider,
+                          ),
+                          _buildDivider(),
+                          _buildSettingTile(
+                            title: 'Check for Updates',
+                            subtitle: 'Check if a new version is available',
+                            icon: Icons.system_update,
+                            onTap: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('You have the latest version'),
+                                ),
+                              );
+                            },
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            themeProvider: themeProvider,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Save button
+                    Center(
+                      child: ElevatedButton.icon(
+                        onPressed: _saveSettings,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: themeProvider.gradientColors[0],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 32,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        icon: const Icon(Icons.save),
+                        label: const Text(
+                          'Save Settings',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -653,9 +655,9 @@ class _SettingsState extends State<Settings> {
           'Terms of Service',
           style: TextStyle(color: themeProvider.textColor),
         ),
-        content: Container(
+        content: SizedBox(
           width: double.maxFinite,
-          height: 300,
+          height: MediaQuery.of(context).size.height * 0.4,
           child: SingleChildScrollView(
             child: Text(
               'This is a sample Terms of Service document. In a real application, this would contain the actual legal terms and conditions that users must agree to when using the application.\n\n'
@@ -695,9 +697,9 @@ class _SettingsState extends State<Settings> {
           'Privacy Policy',
           style: TextStyle(color: themeProvider.textColor),
         ),
-        content: Container(
+        content: SizedBox(
           width: double.maxFinite,
-          height: 300,
+          height: MediaQuery.of(context).size.height * 0.4,
           child: SingleChildScrollView(
             child: Text(
               'This is a sample Privacy Policy document. In a real application, this would contain the actual privacy policy that explains how user data is collected, used, and protected.\n\n'

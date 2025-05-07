@@ -260,9 +260,11 @@ class _SettingsPageState extends State<SettingsPage> {
                             ),
                           ),
 
-                          // Theme Presets
-                          SizedBox(
-                            height: 80,
+                          // Theme Presets with fixed height to prevent overflow
+                          Container(
+                            height: 90, // Increased height to avoid overflow
+                            margin: const EdgeInsets.only(
+                                bottom: 8), // Added margin
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               itemCount: _presetThemes.length,
@@ -282,6 +284,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                       ]);
                                     },
                                     child: Column(
+                                      mainAxisSize: MainAxisSize
+                                          .min, // Added to minimize column height
                                       children: [
                                         Container(
                                           width: 50,

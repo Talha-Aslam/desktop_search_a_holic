@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:desktop_search_a_holic/theme_provider.dart';
 
 class EditProduct extends StatefulWidget {
   final String productID;
@@ -57,146 +59,341 @@ class _EditProductState extends State<EditProduct> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-          flexibleSpace: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue, const Color.fromARGB(255, 73, 206, 195)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: themeProvider.gradientColors,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
           ),
-          title: const Text(
-            'Edit Product',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          )),
+        ),
+        title: const Text(
+          'Edit Product',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.white),
+            tooltip: 'Delete Product',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: themeProvider.cardBackgroundColor,
+                  title: Text(
+                    'Delete Product',
+                    style: TextStyle(color: themeProvider.textColor),
+                  ),
+                  content: Text(
+                    'Are you sure you want to delete this product?',
+                    style: TextStyle(color: themeProvider.textColor),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(color: themeProvider.textColor),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Product deleted')),
+                        );
+                      },
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.lightBlueAccent,
-              const Color.fromARGB(141, 178, 255, 89)
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: themeProvider.scaffoldBackgroundColor,
         ),
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
+        child: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextFormField(
-                controller: _productName,
-                decoration: const InputDecoration(
-                  labelText: 'Product Name',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
+              // Product header card
+              Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      themeProvider.gradientColors[0].withOpacity(0.1),
+                      themeProvider.gradientColors[1].withOpacity(0.1),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: themeProvider.gradientColors[0].withOpacity(0.3),
+                    width: 1,
+                  ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the product name';
-                  }
-                  return null;
-                },
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: themeProvider.cardBackgroundColor,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.inventory,
+                        size: 30,
+                        color: themeProvider.gradientColors[0],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Product ID: ${widget.productID}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: themeProvider.textColor.withOpacity(0.7),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _productName.text,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: themeProvider.textColor,
+                            ),
+                          ),
+                          Text(
+                            'Category: ${_productCategory.text}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: themeProvider.textColor.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _productPrice,
-                decoration: const InputDecoration(
-                  labelText: 'Product Price',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
+
+              // Edit product form
+              Card(
+                color: themeProvider.cardBackgroundColor,
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the product price';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _productQty,
-                decoration: const InputDecoration(
-                  labelText: 'Product Quantity',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Product Details',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: themeProvider.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _productName,
+                          labelText: 'Product Name',
+                          icon: Icons.shopping_bag,
+                          themeProvider: themeProvider,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the product name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _productPrice,
+                                labelText: 'Price',
+                                icon: Icons.attach_money,
+                                themeProvider: themeProvider,
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Enter price';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _productQty,
+                                labelText: 'Quantity',
+                                icon: Icons.inventory_2,
+                                themeProvider: themeProvider,
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Enter quantity';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _productType,
+                          labelText: 'Product Type',
+                          icon: Icons.category,
+                          themeProvider: themeProvider,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the product type';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _productCategory,
+                          labelText: 'Product Category',
+                          icon: Icons.folder,
+                          themeProvider: themeProvider,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the product category';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          controller: _productExpiry,
+                          labelText: 'Product Expiry Date',
+                          icon: Icons.calendar_today,
+                          themeProvider: themeProvider,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter the product expiry date';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: _saveProduct,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: themeProvider.gradientColors[0],
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              elevation: 2,
+                            ),
+                            child: const Text(
+                              'SAVE CHANGES',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the product quantity';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _productType,
-                decoration: const InputDecoration(
-                  labelText: 'Product Type',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the product type';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _productCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Product Category',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the product category';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-              TextFormField(
-                controller: _productExpiry,
-                decoration: const InputDecoration(
-                  labelText: 'Product Expiry Date',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the product expiry date';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-              ElevatedButton(
-                onPressed: _saveProduct,
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.black,
-                  backgroundColor:
-                      Colors.white.withOpacity(0.7), // Button text color
-                ),
-                child: const Text('Save Product'),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    required IconData icon,
+    required ThemeProvider themeProvider,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: TextStyle(color: themeProvider.textColor.withOpacity(0.7)),
+        prefixIcon: Icon(
+          icon,
+          color: themeProvider.gradientColors[0],
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: themeProvider.gradientColors[0]),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: themeProvider.isDarkMode
+                ? Colors.grey.shade700
+                : Colors.grey.shade300,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide:
+              BorderSide(color: themeProvider.gradientColors[0], width: 2),
+        ),
+        filled: true,
+        fillColor: themeProvider.isDarkMode
+            ? Colors.grey.shade800.withOpacity(0.3)
+            : Colors.grey.shade50,
+      ),
+      style: TextStyle(color: themeProvider.textColor),
+      keyboardType: keyboardType,
+      validator: validator,
     );
   }
 }

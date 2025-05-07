@@ -21,6 +21,89 @@ class _ChangePasswordState extends State<ChangePassword> {
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
 
+  // Password strength indicators
+  bool _hasMinLength = false;
+  bool _hasUppercase = false;
+  bool _hasLowercase = false;
+  bool _hasDigit = false;
+  bool _hasSpecialChar = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _newPasswordController.addListener(_checkPasswordStrength);
+  }
+
+  @override
+  void dispose() {
+    _newPasswordController.removeListener(_checkPasswordStrength);
+    _oldPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _checkPasswordStrength() {
+    final password = _newPasswordController.text;
+    setState(() {
+      _hasMinLength = password.length >= 8;
+      _hasUppercase = password.contains(RegExp(r'[A-Z]'));
+      _hasLowercase = password.contains(RegExp(r'[a-z]'));
+      _hasDigit = password.contains(RegExp(r'[0-9]'));
+      _hasSpecialChar = password.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'));
+    });
+  }
+
+  double _calculatePasswordStrength() {
+    int strength = 0;
+    if (_hasMinLength) strength++;
+    if (_hasUppercase) strength++;
+    if (_hasLowercase) strength++;
+    if (_hasDigit) strength++;
+    if (_hasSpecialChar) strength++;
+
+    return strength / 5;
+  }
+
+  Color _getStrengthColor(double strength) {
+    if (strength < 0.3) return Colors.red;
+    if (strength < 0.7) return Colors.orange;
+    return Colors.green;
+  }
+
+  String _getStrengthText(double strength) {
+    if (strength < 0.3) return 'Weak';
+    if (strength < 0.7) return 'Medium';
+    return 'Strong';
+  }
+
+  Widget _buildPasswordCriteriaRow(bool isMet, String text) {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5.0),
+      child: Row(
+        children: [
+          Icon(
+            isMet ? Icons.check_circle : Icons.check_circle_outline,
+            color:
+                isMet ? Colors.green : themeProvider.textColor.withOpacity(0.5),
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: TextStyle(
+              color: isMet
+                  ? Colors.green
+                  : themeProvider.textColor.withOpacity(0.7),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _changePassword() {
     if (_formKey.currentState!.validate()) {
       // Dummy change password logic
@@ -50,6 +133,9 @@ class _ChangePasswordState extends State<ChangePassword> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final double passwordStrength = _calculatePasswordStrength();
+    final Color strengthColor = _getStrengthColor(passwordStrength);
+    final String strengthText = _getStrengthText(passwordStrength);
 
     return Scaffold(
       appBar: AppBar(
@@ -220,6 +306,80 @@ class _ChangePasswordState extends State<ChangePassword> {
                                       return null;
                                     },
                                   ),
+
+                                  // Password strength indicator
+                                  if (_newPasswordController
+                                      .text.isNotEmpty) ...[
+                                    const SizedBox(height: 12),
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: themeProvider.isDarkMode
+                                            ? Colors.black.withOpacity(0.2)
+                                            : Colors.grey.shade200,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                'Password Strength: ',
+                                                style: TextStyle(
+                                                  color:
+                                                      themeProvider.textColor,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                              Text(
+                                                strengthText,
+                                                style: TextStyle(
+                                                  color: strengthColor,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 6),
+                                          // Progress bar for password strength
+                                          ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                            child: LinearProgressIndicator(
+                                              value: passwordStrength,
+                                              backgroundColor:
+                                                  themeProvider.isDarkMode
+                                                      ? Colors.grey.shade700
+                                                      : Colors.grey.shade300,
+                                              color: strengthColor,
+                                              minHeight: 6,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
+
+                                          // Password criteria checklist
+                                          _buildPasswordCriteriaRow(
+                                              _hasMinLength,
+                                              'At least 8 characters'),
+                                          _buildPasswordCriteriaRow(
+                                              _hasUppercase,
+                                              'At least one uppercase letter (A-Z)'),
+                                          _buildPasswordCriteriaRow(
+                                              _hasLowercase,
+                                              'At least one lowercase letter (a-z)'),
+                                          _buildPasswordCriteriaRow(_hasDigit,
+                                              'At least one number (0-9)'),
+                                          _buildPasswordCriteriaRow(
+                                              _hasSpecialChar,
+                                              'At least one special character (!@#\$%^&*...)'),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+
                                   const SizedBox(height: 20),
 
                                   // Confirm password field
@@ -333,61 +493,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Password tips
-                      Container(
-                        constraints: const BoxConstraints(maxWidth: 450),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: themeProvider.isDarkMode
-                              ? Colors.blueGrey.shade900.withOpacity(0.5)
-                              : Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: themeProvider.isDarkMode
-                                ? Colors.blueGrey.shade700
-                                : Colors.blue.shade200,
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.info_outline,
-                                  color: themeProvider.gradientColors[0],
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Password Tips',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: themeProvider.textColor,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            _buildPasswordTip(
-                              context,
-                              'Use at least 8 characters',
-                            ),
-                            _buildPasswordTip(
-                              context,
-                              'Include uppercase and lowercase letters',
-                            ),
-                            _buildPasswordTip(
-                              context,
-                              'Include at least one number',
-                            ),
-                            _buildPasswordTip(
-                              context,
-                              'Include at least one special character (!@#\$%^&*)',
-                            ),
-                          ],
-                        ),
-                      ),
+                      // We can remove the static password tips section since we now have dynamic feedback
                     ],
                   ),
                 ),

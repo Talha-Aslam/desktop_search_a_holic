@@ -30,7 +30,7 @@ class _LoginState extends State<Login> {
     String validationMessage = validateLogin();
     if (validationMessage == "valid") {
       // Dummy login check
-      if (email.text == "user@example.com" && password.text == "password") {
+      if (email.text == "t" && password.text == "t") {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login successful!')),
         );
@@ -49,10 +49,19 @@ class _LoginState extends State<Login> {
     }
   }
 
+  void _handleGmailLogin() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Gmail login coming soon!')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final size = MediaQuery.of(context).size;
+
+    // Define text colors based on the current theme
+    final textColor = Colors.white;
 
     return Scaffold(
       appBar: AppBar(
@@ -120,16 +129,16 @@ class _LoginState extends State<Login> {
                     Icon(
                       Icons.account_circle,
                       size: 80,
-                      color: Colors.white,
+                      color: textColor,
                     ),
                     const SizedBox(height: 16.0),
                     // Login title
-                    const Text(
+                    Text(
                       'Login Account',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: textColor,
                       ),
                     ),
                     const SizedBox(height: 24.0),
@@ -138,7 +147,7 @@ class _LoginState extends State<Login> {
                       controller: email,
                       decoration: InputDecoration(
                         labelText: 'Email',
-                        labelStyle: const TextStyle(color: Colors.white),
+                        labelStyle: TextStyle(color: Colors.white),
                         hintText: 'Enter your email address',
                         hintStyle:
                             TextStyle(color: Colors.white.withOpacity(0.7)),
@@ -156,6 +165,16 @@ class _LoginState extends State<Login> {
                           borderSide:
                               const BorderSide(color: Colors.white, width: 2),
                         ),
+                        errorStyle: TextStyle(
+                          color: Colors.yellow,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        filled: !themeProvider
+                            .isDarkMode, // Only fill background in light mode
+                        fillColor: !themeProvider.isDarkMode
+                            ? Colors.black.withOpacity(0.3)
+                            : // Darker background for light mode
+                            Colors.transparent, // Keep transparent in dark mode
                       ),
                       style: const TextStyle(color: Colors.white),
                       keyboardType: TextInputType.emailAddress,
@@ -202,6 +221,16 @@ class _LoginState extends State<Login> {
                           borderSide:
                               const BorderSide(color: Colors.white, width: 2),
                         ),
+                        errorStyle: const TextStyle(
+                          color: Colors.yellow,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        filled: !themeProvider
+                            .isDarkMode, // Only fill background in light mode
+                        fillColor: !themeProvider.isDarkMode
+                            ? Colors.black.withOpacity(0.3)
+                            : // Darker background for light mode
+                            Colors.transparent, // Keep transparent in dark mode
                       ),
                       style: const TextStyle(color: Colors.white),
                       obscureText: _obscurePassword,
@@ -277,6 +306,71 @@ class _LoginState extends State<Login> {
                           ),
                         ),
                       ],
+                    ),
+
+                    const SizedBox(height: 20.0),
+                    // Or divider
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(
+                            color: Colors.white.withOpacity(0.5),
+                            thickness: 1,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Text(
+                            'OR',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: Colors.white.withOpacity(0.5),
+                            thickness: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20.0),
+                    // Gmail Login Button - now using icon instead of image
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        icon: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.g_mobiledata_rounded,
+                            color: Colors.red,
+                            size: 24,
+                          ),
+                        ),
+                        label: const Text(
+                          'Continue with Gmail',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.black87,
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 4,
+                        ),
+                        onPressed: _handleGmailLogin,
+                      ),
                     ),
                   ],
                 ),
