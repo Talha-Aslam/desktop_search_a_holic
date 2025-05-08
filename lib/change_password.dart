@@ -21,7 +21,6 @@ class _ChangePasswordState extends State<ChangePassword> {
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
 
-  // Password strength indicators
   bool _hasMinLength = false;
   bool _hasUppercase = false;
   bool _hasLowercase = false;
