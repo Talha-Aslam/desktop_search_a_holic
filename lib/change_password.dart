@@ -503,30 +503,4 @@ class _ChangePasswordState extends State<ChangePassword> {
       ),
     );
   }
-
-  Widget _buildPasswordTip(BuildContext context, String tip) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle_outline,
-            size: 16,
-            color: themeProvider.gradientColors[0],
-          ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              tip,
-              style: TextStyle(
-                color: themeProvider.textColor,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
