@@ -56,9 +56,7 @@ class _AddProduct extends State<AddProduct> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    
+
     return Scaffold(
       appBar: AppBar(
         flexibleSpace: Container(
@@ -119,9 +117,9 @@ class _AddProduct extends State<AddProduct> {
                                 ),
                               ],
                             ),
-                            
+
                             const SizedBox(height: 24),
-                            
+
                             // Product Name
                             _buildTextField(
                               context,
@@ -144,9 +142,9 @@ class _AddProduct extends State<AddProduct> {
                                 return null;
                               },
                             ),
-                            
+
                             const SizedBox(height: 16),
-                            
+
                             // Product Price
                             _buildTextField(
                               context,
@@ -155,7 +153,8 @@ class _AddProduct extends State<AddProduct> {
                               Icons.price_check,
                               keyboardType: TextInputType.number,
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r"^\d+\.?\d{0,2}"))
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r"^\d+\.?\d{0,2}"))
                               ],
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -164,9 +163,9 @@ class _AddProduct extends State<AddProduct> {
                                 return null;
                               },
                             ),
-                            
+
                             const SizedBox(height: 16),
-                            
+
                             // Product Quantity
                             _buildTextField(
                               context,
@@ -175,7 +174,8 @@ class _AddProduct extends State<AddProduct> {
                               Icons.production_quantity_limits,
                               keyboardType: TextInputType.number,
                               inputFormatters: [
-                                FilteringTextInputFormatter.allow(RegExp(r"^\d+\.?\d{0,2}"))
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r"^\d+\.?\d{0,2}"))
                               ],
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
@@ -184,9 +184,9 @@ class _AddProduct extends State<AddProduct> {
                                 return null;
                               },
                             ),
-                            
+
                             const SizedBox(height: 16),
-                            
+
                             // Expiry Date
                             TextField(
                               controller: dateinput,
@@ -194,20 +194,24 @@ class _AddProduct extends State<AddProduct> {
                               style: TextStyle(color: themeProvider.textColor),
                               decoration: InputDecoration(
                                 labelText: "Expiry Date",
-                                labelStyle: TextStyle(color: themeProvider.textColor),
-                                prefixIcon: Icon(Icons.calendar_today, color: themeProvider.gradientColors[0]),
-                                suffixIcon: Icon(Icons.arrow_drop_down, color: themeProvider.gradientColors[0]),
+                                labelStyle:
+                                    TextStyle(color: themeProvider.textColor),
+                                prefixIcon: Icon(Icons.calendar_today,
+                                    color: themeProvider.gradientColors[0]),
+                                suffixIcon: Icon(Icons.arrow_drop_down,
+                                    color: themeProvider.gradientColors[0]),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 filled: true,
-                                fillColor: themeProvider.isDarkMode 
+                                fillColor: themeProvider.isDarkMode
                                     ? const Color(0xFF2C2C2C)
                                     : Colors.white,
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: BorderSide(
-                                    color: themeProvider.gradientColors[0].withOpacity(0.5),
+                                    color: themeProvider.gradientColors[0]
+                                        .withOpacity(0.5),
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
@@ -227,12 +231,14 @@ class _AddProduct extends State<AddProduct> {
                                   builder: (context, child) {
                                     return Theme(
                                       data: Theme.of(context).copyWith(
-                                        colorScheme: themeProvider.isDarkMode 
+                                        colorScheme: themeProvider.isDarkMode
                                             ? ColorScheme.dark(
-                                                primary: themeProvider.gradientColors[0],
+                                                primary: themeProvider
+                                                    .gradientColors[0],
                                               )
                                             : ColorScheme.light(
-                                                primary: themeProvider.gradientColors[0],
+                                                primary: themeProvider
+                                                    .gradientColors[0],
                                               ),
                                       ),
                                       child: child!,
@@ -241,16 +247,18 @@ class _AddProduct extends State<AddProduct> {
                                 );
 
                                 if (pickedDate != null) {
-                                  String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
+                                  String formattedDate =
+                                      DateFormat('yyyy-MM-dd')
+                                          .format(pickedDate);
                                   setState(() {
                                     dateinput.text = formattedDate;
                                   });
                                 }
                               },
                             ),
-                            
+
                             const SizedBox(height: 16),
-                            
+
                             // Visibility Type
                             _buildDropdown(
                               context,
@@ -262,9 +270,9 @@ class _AddProduct extends State<AddProduct> {
                               },
                               "Select Visibility",
                             ),
-                            
+
                             const SizedBox(height: 16),
-                            
+
                             // Product Category
                             _buildDropdown(
                               context,
@@ -276,9 +284,9 @@ class _AddProduct extends State<AddProduct> {
                               },
                               "Select Category",
                             ),
-                            
+
                             const SizedBox(height: 24),
-                            
+
                             // Buttons Row
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -287,9 +295,10 @@ class _AddProduct extends State<AddProduct> {
                                 ElevatedButton.icon(
                                   onPressed: () {
                                     Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const Product())
-                                    );
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                const Product()));
                                   },
                                   icon: const Icon(Icons.cancel_outlined),
                                   label: const Text(
@@ -301,15 +310,16 @@ class _AddProduct extends State<AddProduct> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.red,
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 12),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
                                 ),
-                                
+
                                 const SizedBox(width: 16),
-                                
+
                                 // Add Button
                                 ElevatedButton.icon(
                                   onPressed: () {
@@ -331,9 +341,11 @@ class _AddProduct extends State<AddProduct> {
                                     ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: themeProvider.gradientColors[0],
+                                    backgroundColor:
+                                        themeProvider.gradientColors[0],
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 12),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -354,7 +366,7 @@ class _AddProduct extends State<AddProduct> {
       ),
     );
   }
-  
+
   // Helper method to build text fields with consistent styling
   Widget _buildTextField(
     BuildContext context,
@@ -366,7 +378,7 @@ class _AddProduct extends State<AddProduct> {
     String? Function(String?)? validator,
   }) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -380,9 +392,8 @@ class _AddProduct extends State<AddProduct> {
           borderRadius: BorderRadius.circular(8),
         ),
         filled: true,
-        fillColor: themeProvider.isDarkMode 
-            ? const Color(0xFF2C2C2C)
-            : Colors.white,
+        fillColor:
+            themeProvider.isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
@@ -414,7 +425,7 @@ class _AddProduct extends State<AddProduct> {
       validator: validator,
     );
   }
-  
+
   // Helper method to build dropdown fields with consistent styling
   Widget _buildDropdown(
     BuildContext context,
@@ -425,7 +436,7 @@ class _AddProduct extends State<AddProduct> {
     String hint,
   ) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    
+
     return DropdownButtonFormField(
       decoration: InputDecoration(
         labelText: label,
@@ -435,9 +446,8 @@ class _AddProduct extends State<AddProduct> {
           borderRadius: BorderRadius.circular(8),
         ),
         filled: true,
-        fillColor: themeProvider.isDarkMode 
-            ? const Color(0xFF2C2C2C)
-            : Colors.white,
+        fillColor:
+            themeProvider.isDarkMode ? const Color(0xFF2C2C2C) : Colors.white,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
