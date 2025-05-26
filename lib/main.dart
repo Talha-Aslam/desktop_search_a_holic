@@ -14,8 +14,17 @@ import 'package:desktop_search_a_holic/splash.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/uploadData.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await createFilesAndFolders();
+  
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
@@ -59,29 +68,40 @@ class MyApp extends StatelessWidget {
   }
 }
 
-void createFilesAndFolders() async {
-  // Creating A Folder in the Document Directory
-  Directory directory = await getApplicationDocumentsDirectory();
-  print(directory.path);
-  String path = directory.path;
-  Directory folder = Directory('$path/SeachAHolic');
-
-  // IF There is No Folder in the Document Directory
-  if (!folder.existsSync()) {
-    folder.create();
-    print('Folder created at ${folder.path}');
-  } else {
-    print('Folder already exists at ${folder.path}');
-  }
-
-  // List of files to create
-  List<String> filesToCreate = ['products.csv', 'user.json', 'logs.txt'];
-
-  for (String fileName in filesToCreate) {
-    File file = File('${folder.path}/$fileName');
-    if (!file.existsSync()) {
-      await file.create();
-      print("$fileName File Created");
+Future<void> createFilesAndFolders() async {
+  try {
+    // Check if we're running on web platform
+    if (kIsWeb) {
+      print('Running on web platform - file operations are limited');
+      return;
     }
+
+    // Creating A Folder in the Document Directory
+    Directory directory = await getApplicationDocumentsDirectory();
+    print(directory.path);
+    String path = directory.path;
+    Directory folder = Directory('$path/SeachAHolic');
+
+    // IF There is No Folder in the Document Directory
+    if (!folder.existsSync()) {
+      folder.create();
+      print('Folder created at ${folder.path}');
+    } else {
+      print('Folder already exists at ${folder.path}');
+    }
+
+    // List of files to create
+    List<String> filesToCreate = ['products.csv', 'user.json', 'logs.txt'];
+
+    for (String fileName in filesToCreate) {
+      File file = File('${folder.path}/$fileName');
+      if (!file.existsSync()) {
+        await file.create();
+        print("$fileName File Created");
+      }
+    }
+  } catch (e) {
+    print('Error creating files and folders: $e');
+    // Continue app execution even if file creation fails
   }
 }

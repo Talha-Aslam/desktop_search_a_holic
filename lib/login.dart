@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:desktop_search_a_holic/imports.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -12,6 +14,8 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final TextEditingController email = TextEditingController();
   final TextEditingController password = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _isLoading = false;
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
@@ -26,19 +30,53 @@ class _LoginState extends State<Login> {
     }
   }
 
-  void checkLogin(BuildContext context) {
+  Future<void> checkLogin(BuildContext context) async {
     String validationMessage = validateLogin();
     if (validationMessage == "valid") {
-      // Dummy login check
-      if (email.text == "t" && password.text == "t") {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login successful!')),
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        // Attempt to sign in with Firebase Auth
+        final userCredential = await _auth.signInWithEmailAndPassword(
+          email: email.text.trim(),
+          password: password.text,
         );
-        Navigator.pushReplacementNamed(context, '/dashboard');
-      } else {
+
+        if (userCredential.user != null) {
+          // Login successful
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Login successful!')),
+          );
+          Navigator.pushReplacementNamed(context, '/dashboard');
+        }
+      } on FirebaseAuthException catch (e) {
+        // Handle specific Firebase Auth errors
+        String errorMessage = 'An error occurred during login';
+
+        if (e.code == 'user-not-found') {
+          errorMessage = 'No user found with this email';
+        } else if (e.code == 'wrong-password') {
+          errorMessage = 'Invalid password';
+        } else if (e.code == 'invalid-email') {
+          errorMessage = 'Invalid email format';
+        } else if (e.code == 'user-disabled') {
+          errorMessage = 'This account has been disabled';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid email or password')),
+          SnackBar(content: Text(errorMessage)),
         );
+      } catch (e) {
+        // Handle other errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login error: ${e.toString()}')),
+        );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -263,25 +301,31 @@ class _LoginState extends State<Login> {
                     SizedBox(
                       width: double.infinity,
                       height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: themeProvider.gradientColors[0],
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 4,
-                        ),
-                        onPressed: () => checkLogin(context),
-                        child: Text(
-                          'Login',
-                          style: TextStyle(
-                            color: themeProvider.gradientColors[0],
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      child: _isLoading
+                          ? Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                foregroundColor: themeProvider.gradientColors[0],
+                                backgroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                elevation: 4,
+                              ),
+                              onPressed: () => checkLogin(context),
+                              child: Text(
+                                'Login',
+                                style: TextStyle(
+                                  color: themeProvider.gradientColors[0],
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                     ),
                     const SizedBox(height: 16.0),
                     // Registration Link

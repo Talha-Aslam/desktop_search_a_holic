@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Registration extends StatefulWidget {
   const Registration({super.key});
@@ -16,6 +20,9 @@ class _RegistrationState extends State<Registration> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
@@ -44,6 +51,71 @@ class _RegistrationState extends State<Registration> {
     _confirmPasswordController.dispose();
     _phoneController.dispose();
     super.dispose();
+  }
+
+  // Register user with Firebase
+  Future<void> registerUser() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Check if passwords match
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Create user with email and password
+      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      // Store additional user data in Firestore
+      await _firestore.collection('users').doc(userCredential.user!.uid).set({
+        'name': _nameController.text,
+        'email': _emailController.text.trim(),
+        'phone': _phoneController.text,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registration successful! You can now login.')),
+      );
+
+      // Navigate to login page
+      Navigator.pushReplacementNamed(context, '/login');
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Registration failed';
+
+      if (e.code == 'weak-password') {
+        errorMessage = 'The password provided is too weak';
+      } else if (e.code == 'email-already-in-use') {
+        errorMessage = 'An account already exists for that email';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'Invalid email format';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registration error: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _checkPasswordStrength() {
@@ -589,7 +661,7 @@ class _RegistrationState extends State<Registration> {
                                 ),
                                 elevation: 4,
                               ),
-                              onPressed: _register,
+                              onPressed: registerUser,
                               child: const Text(
                                 'Create Account',
                                 style: TextStyle(
