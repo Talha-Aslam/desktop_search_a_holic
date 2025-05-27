@@ -123,6 +123,12 @@ class Sidebar extends StatelessWidget {
                 ),
                 _buildListTile(
                   context: context,
+                  icon: Icons.point_of_sale,
+                  text: 'Point of Sale',
+                  route: '/pos',
+                ),
+                _buildListTile(
+                  context: context,
                   icon: Icons.receipt,
                   text: 'Invoices',
                   route: '/invoices',

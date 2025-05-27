@@ -40,6 +40,8 @@ class ThemeProvider extends ChangeNotifier {
       _isDarkMode ? _darkCardBgColor : _lightCardBgColor;
   Color get textColor => _isDarkMode ? _darkTextColor : _lightTextColor;
   Color get iconColor => _isDarkMode ? _darkIconColor : _lightIconColor;
+  Color get borderColor =>
+      _isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300;
 
   ThemeProvider() {
     _loadThemePreference();

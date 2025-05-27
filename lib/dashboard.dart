@@ -2,9 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:desktop_search_a_holic/sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
+import 'package:desktop_search_a_holic/sales_service.dart';
 
-class Dashboard extends StatelessWidget {
+class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
+
+  @override
+  _DashboardState createState() => _DashboardState();
+}
+
+class _DashboardState extends State<Dashboard> {
+  final SalesService _salesService = SalesService();
+  Map<String, dynamic> _salesStats = {
+    'totalSalesAmount': 0.0,
+    'totalOrders': 0,
+    'uniqueCustomers': 0,
+    'topSellingProduct': 'N/A',
+    'topSellingCount': 0,
+  };
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSalesStats();
+  }
+
+  Future<void> _loadSalesStats() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      Map<String, dynamic> stats = await _salesService.getSalesStats();
+
+      setState(() {
+        _salesStats = stats;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading sales stats: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +68,14 @@ class Dashboard extends StatelessWidget {
           'Dashboard',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadSalesStats,
+            tooltip: 'Refresh Dashboard',
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Row(
         children: [
@@ -111,48 +161,53 @@ class Dashboard extends StatelessWidget {
                         fontSize: 20,
                       ),
                     ),
-                    const SizedBox(height: 16),
-
-                    // Statistics Cards Grid
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount:
-                          size.width > 1200 ? 4 : (size.width > 800 ? 3 : 2),
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: 1.5,
-                      children: [
-                        _buildStatCard(
-                          context,
-                          'Products',
-                          '120',
-                          Icons.shopping_cart,
-                          Colors.blue,
-                        ),
-                        _buildStatCard(
-                          context,
-                          'Orders',
-                          '43',
-                          Icons.shopping_basket,
-                          Colors.green,
-                        ),
-                        _buildStatCard(
-                          context,
-                          'Revenue',
-                          '\$5,240',
-                          Icons.attach_money,
-                          Colors.orange,
-                        ),
-                        _buildStatCard(
-                          context,
-                          'Customers',
-                          '68',
-                          Icons.people,
-                          Colors.purple,
-                        ),
-                      ],
-                    ),
+                    const SizedBox(height: 16), // Statistics Cards Grid
+                    _isLoading
+                        ? Center(
+                            child: CircularProgressIndicator(
+                              color: themeProvider.gradientColors[0],
+                            ),
+                          )
+                        : GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: size.width > 1200
+                                ? 4
+                                : (size.width > 800 ? 3 : 2),
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 1.5,
+                            children: [
+                              _buildStatCard(
+                                context,
+                                'Products',
+                                '120', // This would come from product service
+                                Icons.shopping_cart,
+                                Colors.blue,
+                              ),
+                              _buildStatCard(
+                                context,
+                                'Orders',
+                                _salesStats['totalOrders'].toString(),
+                                Icons.shopping_basket,
+                                Colors.green,
+                              ),
+                              _buildStatCard(
+                                context,
+                                'Revenue',
+                                '\$${_salesStats['totalSalesAmount'].toStringAsFixed(2)}',
+                                Icons.attach_money,
+                                Colors.orange,
+                              ),
+                              _buildStatCard(
+                                context,
+                                'Customers',
+                                _salesStats['uniqueCustomers'].toString(),
+                                Icons.people,
+                                Colors.purple,
+                              ),
+                            ],
+                          ),
 
                     const SizedBox(height: 24),
 

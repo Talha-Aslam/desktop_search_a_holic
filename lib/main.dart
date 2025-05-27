@@ -5,6 +5,7 @@ import 'package:desktop_search_a_holic/addProduct.dart';
 import 'package:desktop_search_a_holic/editProduct.dart';
 import 'package:desktop_search_a_holic/invoice.dart';
 import 'package:desktop_search_a_holic/newOrder.dart';
+import 'package:desktop_search_a_holic/pos_enhanced.dart' as enhanced;
 import 'package:desktop_search_a_holic/product.dart';
 import 'package:desktop_search_a_holic/profile.dart';
 import 'package:desktop_search_a_holic/reports.dart';
@@ -24,7 +25,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await createFilesAndFolders();
-  
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
@@ -63,6 +64,7 @@ class MyApp extends StatelessWidget {
         '/sales': (context) => const Sales(),
         '/uploadData': (context) => const UploadData(),
         '/settings': (context) => const SettingsPage(),
+        '/pos': (context) => const enhanced.POS(),
       },
     );
   }
