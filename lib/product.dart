@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/sidebar.dart';
+import 'package:desktop_search_a_holic/firebase_service.dart';
 
 class Product extends StatefulWidget {
   const Product({super.key});
@@ -14,15 +15,55 @@ class _ProductState extends State<Product> {
   List<Map<String, dynamic>> products = [];
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> filteredProducts = [];
+  final FirebaseService _firebaseService = FirebaseService();
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadDummyProducts();
+    _loadProductsFromFirestore();
+  }
+
+  Future<void> _loadProductsFromFirestore() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      
+      List<Map<String, dynamic>> loadedProducts = await _firebaseService.getProducts();
+      
+      setState(() {
+        products = loadedProducts;
+        filteredProducts = loadedProducts;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // Show error to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load products: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _loadProductsFromFirestore,
+            ),
+          ),
+        );
+        
+        // Load dummy data as fallback
+        _loadDummyProducts();
+      }
+    }
   }
 
   void _loadDummyProducts() {
-    // Dummy data for products with more details
+    // Dummy data for products with more details (fallback data)
     var dummyProducts = [
       {
         "name": "Paracetamol 500mg",
@@ -71,6 +112,7 @@ class _ProductState extends State<Product> {
     setState(() {
       products = dummyProducts;
       filteredProducts = dummyProducts;
+      _isLoading = false;
     });
   }
 
@@ -88,6 +130,10 @@ class _ProductState extends State<Product> {
               product['name'].toLowerCase().contains(query.toLowerCase()))
           .toList();
     });
+  }
+
+  Future<void> _refreshProducts() async {
+    await _loadProductsFromFirestore();
   }
 
   @override
@@ -111,9 +157,18 @@ class _ProductState extends State<Product> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshProducts,
+            tooltip: 'Refresh',
+          ),
+          IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.pushNamed(context, '/addProduct');
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/addProduct');
+              // Refresh products when returning from add product page
+              if (result == true) {
+                _refreshProducts();
+              }
             },
           ),
           const SizedBox(width: 8),
@@ -183,35 +238,66 @@ class _ProductState extends State<Product> {
 
                   // Products list
                   Expanded(
-                    child: filteredProducts.isEmpty
+                    child: _isLoading
                         ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  Icons.inventory_2_outlined,
-                                  size: 64,
-                                  color:
-                                      themeProvider.textColor.withOpacity(0.5),
+                                CircularProgressIndicator(
+                                  color: themeProvider.gradientColors[0],
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No products found',
+                                  'Loading products...',
                                   style: TextStyle(
                                     color: themeProvider.textColor,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w500,
+                                    fontSize: 16,
                                   ),
                                 ),
                               ],
                             ),
                           )
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(16.0),
-                            itemCount: filteredProducts.length,
-                            itemBuilder: (context, index) {
-                              final product = filteredProducts[index];
-                              return Card(
+                        : filteredProducts.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.inventory_2_outlined,
+                                      size: 64,
+                                      color: themeProvider.textColor.withOpacity(0.5),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No products found',
+                                      style: TextStyle(
+                                        color: themeProvider.textColor,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    ElevatedButton(
+                                      onPressed: _loadProductsFromFirestore,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: themeProvider.gradientColors[0],
+                                      ),
+                                      child: const Text(
+                                        'Refresh',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ],
+                                ),                              )
+                            : RefreshIndicator(
+                                onRefresh: _refreshProducts,
+                                color: themeProvider.gradientColors[0],
+                                child: ListView.builder(
+                                  padding: const EdgeInsets.all(16.0),
+                                  itemCount: filteredProducts.length,
+                                  itemBuilder: (context, index) {
+                                    final product = filteredProducts[index];
+                                    return Card(
                                 margin: const EdgeInsets.only(bottom: 16.0),
                                 color: themeProvider.cardBackgroundColor,
                                 elevation: 3.0,
@@ -311,6 +397,7 @@ class _ProductState extends State<Product> {
                               );
                             },
                           ),
+                        ),
                   ),
                 ],
               ),
@@ -319,8 +406,12 @@ class _ProductState extends State<Product> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/addProduct');
+        onPressed: () async {
+          final result = await Navigator.pushNamed(context, '/addProduct');
+          // Refresh products when returning from add product page
+          if (result == true) {
+            _refreshProducts();
+          }
         },
         backgroundColor: themeProvider.gradientColors[0],
         child: const Icon(Icons.add),
@@ -460,6 +551,8 @@ class _ProductState extends State<Product> {
 
   void _showDeleteConfirmation(BuildContext context, int index) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    final product = filteredProducts[index];
+    
     showDialog(
       context: context,
       builder: (context) {
@@ -470,7 +563,7 @@ class _ProductState extends State<Product> {
             style: TextStyle(color: themeProvider.textColor),
           ),
           content: Text(
-            'Are you sure you want to delete ${filteredProducts[index]['name']}?',
+            'Are you sure you want to delete ${product['name']}?',
             style: TextStyle(color: themeProvider.textColor),
           ),
           actions: [
@@ -484,27 +577,44 @@ class _ProductState extends State<Product> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  // Remove the product
-                  final productToRemove = filteredProducts[index];
-                  products.removeWhere(
-                      (product) => product['name'] == productToRemove['name']);
-                  filteredProducts = List.from(products);
-                });
+              onPressed: () async {
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${filteredProducts[index]['name']} deleted'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                
+                try {
+                  // Delete from Firestore if product has an ID
+                  if (product['id'] != null) {
+                    await _firebaseService.deleteProduct(product['id']);
+                  }
+                  
+                  // Update local state
+                  setState(() {
+                    products.removeWhere((p) => p['name'] == product['name']);
+                    filteredProducts = List.from(products);
+                  });
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${product['name']} deleted'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to delete product: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
               ),
-              child:
-                  const Text('Delete', style: TextStyle(color: Colors.white)),
+              child: const Text('Delete', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
-import 'package:desktop_search_a_holic/product.dart';
 import 'package:desktop_search_a_holic/sidebar.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
-import 'package:desktop_search_a_holic/firebase_services.dart';
+import 'package:desktop_search_a_holic/firebase_service.dart';
 
 class AddProduct extends StatefulWidget {
   const AddProduct({super.key});
@@ -30,6 +29,7 @@ class _AddProduct extends State<AddProduct> {
   GlobalKey<FormState> formkey = GlobalKey<FormState>();
   TextEditingController dateinput = TextEditingController();
   bool _isLoading = false;
+  final FirebaseService _firebaseService = FirebaseService();
 
   @override
   void initState() {
@@ -70,13 +70,14 @@ class _AddProduct extends State<AddProduct> {
         'name': _productName.text.trim(),
         'price': double.parse(_productPrice.text.trim()),
         'quantity': double.parse(_productQty.text.trim()),
-        'expiryDate': dateinput.text.trim(),
-        'visibility': _productType.text.trim(),
+        'expiry': dateinput.text.trim(),
         'category': _productCategory.text.trim(),
+        'type': _productType.text.trim(),
+        'createdAt': DateTime.now().toIso8601String(),
       };
 
-      // Save to Firestore
-      await FirebaseServices.addProduct(productData);
+      // Save to Firestore using FirebaseService
+      await _firebaseService.addProduct(productData);
       
       // Show success message
       showAlert1();
@@ -84,14 +85,21 @@ class _AddProduct extends State<AddProduct> {
       // Clear all fields
       _clearForm();
       
+      // Return success to parent page
+      if (mounted) {
+        Navigator.pop(context, true);
+      }
+      
     } catch (e) {
       // Show error message
-      QuickAlert.show(
-        context: context,
-        type: QuickAlertType.error,
-        title: 'Failed!',
-        text: 'Failed to add product: ${e.toString()}',
-      );
+      if (mounted) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'Failed!',
+          text: 'Failed to add product: ${e.toString()}',
+        );
+      }
     } finally {
       setState(() {
         _isLoading = false;
@@ -266,7 +274,7 @@ class _AddProduct extends State<AddProduct> {
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: BorderSide(
                                     color: themeProvider.gradientColors[0]
-                                        .withOpacity(0.5),
+                                        .withValues(alpha: 0.5),
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
@@ -359,7 +367,7 @@ class _AddProduct extends State<AddProduct> {
                               context,
                               "Product Category",
                               Icons.category,
-                              ["Syrup", "Tablet", "Capsule", "Drops", "Other"],
+                              ["Medicine", "Supplements", "First Aid", "Hygiene", "Other"],
                               (value) {
                                 _productCategory.text = value.toString();
                               },
@@ -381,11 +389,7 @@ class _AddProduct extends State<AddProduct> {
                                 // Cancel Button
                                 ElevatedButton.icon(
                                   onPressed: () {
-                                    Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const Product()));
+                                    Navigator.pop(context, false);
                                   },
                                   icon: const Icon(Icons.cancel_outlined),
                                   label: const Text(
