@@ -9,6 +9,7 @@ import 'package:desktop_search_a_holic/sidebar.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
+import 'package:desktop_search_a_holic/firebase_services.dart';
 
 class AddProduct extends StatefulWidget {
   const AddProduct({super.key});
@@ -28,6 +29,7 @@ class _AddProduct extends State<AddProduct> {
 
   GlobalKey<FormState> formkey = GlobalKey<FormState>();
   TextEditingController dateinput = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -51,6 +53,59 @@ class _AddProduct extends State<AddProduct> {
       title: "Added!",
       text: '${_productName.text} Product Added Successfully!',
     );
+  }
+
+  Future<void> _saveProduct() async {
+    if (!formkey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Create product data map
+      Map<String, dynamic> productData = {
+        'name': _productName.text.trim(),
+        'price': double.parse(_productPrice.text.trim()),
+        'quantity': double.parse(_productQty.text.trim()),
+        'expiryDate': dateinput.text.trim(),
+        'visibility': _productType.text.trim(),
+        'category': _productCategory.text.trim(),
+      };
+
+      // Save to Firestore
+      await FirebaseServices.addProduct(productData);
+      
+      // Show success message
+      showAlert1();
+      
+      // Clear all fields
+      _clearForm();
+      
+    } catch (e) {
+      // Show error message
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.error,
+        title: 'Failed!',
+        text: 'Failed to add product: ${e.toString()}',
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _clearForm() {
+    _productName.clear();
+    _productPrice.clear();
+    _productQty.clear();
+    _productType.clear();
+    _productCategory.clear();
+    dateinput.clear();
   }
 
   @override
@@ -188,7 +243,7 @@ class _AddProduct extends State<AddProduct> {
                             const SizedBox(height: 16),
 
                             // Expiry Date
-                            TextField(
+                            TextFormField(
                               controller: dateinput,
                               readOnly: true,
                               style: TextStyle(color: themeProvider.textColor),
@@ -221,7 +276,27 @@ class _AddProduct extends State<AddProduct> {
                                     width: 2,
                                   ),
                                 ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                    width: 1,
+                                  ),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: const BorderSide(
+                                    color: Colors.red,
+                                    width: 2,
+                                  ),
+                                ),
                               ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please select expiry date';
+                                }
+                                return null;
+                              },
                               onTap: () async {
                                 DateTime? pickedDate = await showDatePicker(
                                   context: context,
@@ -269,6 +344,12 @@ class _AddProduct extends State<AddProduct> {
                                 _productType.text = value.toString();
                               },
                               "Select Visibility",
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Please select visibility';
+                                }
+                                return null;
+                              },
                             ),
 
                             const SizedBox(height: 16),
@@ -283,6 +364,12 @@ class _AddProduct extends State<AddProduct> {
                                 _productCategory.text = value.toString();
                               },
                               "Select Category",
+                              validator: (value) {
+                                if (value == null) {
+                                  return 'Please select category';
+                                }
+                                return null;
+                              },
                             ),
 
                             const SizedBox(height: 24),
@@ -322,21 +409,22 @@ class _AddProduct extends State<AddProduct> {
 
                                 // Add Button
                                 ElevatedButton.icon(
-                                  onPressed: () {
-                                    if (formkey.currentState!.validate()) {
-                                      showAlert1();
-                                      _productName.clear();
-                                      _productPrice.clear();
-                                      _productQty.clear();
-                                      _productType.clear();
-                                      _productCategory.clear();
-                                      dateinput.clear();
-                                    }
-                                  },
-                                  icon: const Icon(Icons.add_circle_outline),
-                                  label: const Text(
-                                    "Add",
-                                    style: TextStyle(
+                                  onPressed: _isLoading ? null : _saveProduct,
+                                  icon: _isLoading
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    Colors.white),
+                                          ),
+                                        )
+                                      : const Icon(Icons.add_circle_outline),
+                                  label: Text(
+                                    _isLoading ? "Adding..." : "Add",
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -433,8 +521,9 @@ class _AddProduct extends State<AddProduct> {
     IconData icon,
     List<String> items,
     void Function(dynamic) onChanged,
-    String hint,
-  ) {
+    String hint, {
+    String? Function(dynamic)? validator,
+  }) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return DropdownButtonFormField(
@@ -461,6 +550,20 @@ class _AddProduct extends State<AddProduct> {
             width: 2,
           ),
         ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(
+            color: Colors.red,
+            width: 1,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(
+            color: Colors.red,
+            width: 2,
+          ),
+        ),
       ),
       style: TextStyle(color: themeProvider.textColor),
       dropdownColor: themeProvider.cardBackgroundColor,
@@ -471,6 +574,7 @@ class _AddProduct extends State<AddProduct> {
         );
       }).toList(),
       onChanged: onChanged,
+      validator: validator,
       hint: Text(
         hint,
         style: TextStyle(

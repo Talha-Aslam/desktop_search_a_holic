@@ -63,4 +63,64 @@ class FirebaseServices {
   static Future<void> sendPasswordResetEmail(String email) async {
     await FirebaseAuth.instance.sendPasswordResetEmail(email: email.trim());
   }
+
+  // Product management functions
+  static Future<String> addProduct(Map<String, dynamic> productData) async {
+    try {
+      // Add current user ID to product data
+      User? currentUser = getCurrentUser();
+      if (currentUser != null) {
+        productData['userId'] = currentUser.uid;
+        productData['createdAt'] = FieldValue.serverTimestamp();
+        productData['updatedAt'] = FieldValue.serverTimestamp();
+      }
+      
+      DocumentReference docRef = await FirebaseFirestore.instance
+          .collection('products')
+          .add(productData);
+      return docRef.id;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<QuerySnapshot> getProducts() async {
+    try {
+      User? currentUser = getCurrentUser();
+      if (currentUser != null) {
+        return await FirebaseFirestore.instance
+            .collection('products')
+            .where('userId', isEqualTo: currentUser.uid)
+            .orderBy('createdAt', descending: true)
+            .get();
+      } else {
+        throw Exception('No user is currently signed in');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<void> updateProduct(String productId, Map<String, dynamic> productData) async {
+    try {
+      productData['updatedAt'] = FieldValue.serverTimestamp();
+      await FirebaseFirestore.instance
+          .collection('products')
+          .doc(productId)
+          .update(productData);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<void> deleteProduct(String productId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('products')
+          .doc(productId)
+          .delete();
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
