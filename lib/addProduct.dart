@@ -73,6 +73,7 @@ class _AddProduct extends State<AddProduct> {
         'expiry': dateinput.text.trim(),
         'category': _productCategory.text.trim(),
         'type': _productType.text.trim(),
+        'userEmail': _firebaseService.currentUser?.email ?? '',
         'createdAt': DateTime.now().toIso8601String(),
       };
 

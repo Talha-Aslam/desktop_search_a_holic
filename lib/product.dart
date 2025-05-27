@@ -63,6 +63,9 @@ class _ProductState extends State<Product> {
   }
 
   void _loadDummyProducts() {
+    // Get current user email for dummy data
+    String? userEmail = _firebaseService.currentUser?.email;
+    
     // Dummy data for products with more details (fallback data)
     var dummyProducts = [
       {
@@ -70,42 +73,48 @@ class _ProductState extends State<Product> {
         "price": 100,
         "quantity": 10,
         "category": "Medicine",
-        "expiry": "2025-12-31"
+        "expiry": "2025-12-31",
+        "userEmail": userEmail,
       },
       {
         "name": "Aspirin 300mg",
         "price": 200,
         "quantity": 5,
         "category": "Medicine",
-        "expiry": "2026-05-15"
+        "expiry": "2026-05-15",
+        "userEmail": userEmail,
       },
       {
         "name": "Vitamins C",
         "price": 150,
         "quantity": 20,
         "category": "Supplements",
-        "expiry": "2027-08-22"
+        "expiry": "2027-08-22",
+        "userEmail": userEmail,
       },
       {
         "name": "Cough Syrup",
         "price": 85,
         "quantity": 15,
         "category": "Medicine",
-        "expiry": "2025-10-30"
+        "expiry": "2025-10-30",
+        "userEmail": userEmail,
       },
       {
         "name": "Bandages",
         "price": 50,
         "quantity": 30,
         "category": "First Aid",
-        "expiry": "2028-01-01"
+        "expiry": "2028-01-01",
+        "userEmail": userEmail,
       },
       {
         "name": "Hand Sanitizer",
         "price": 65,
         "quantity": 25,
         "category": "Hygiene",
-        "expiry": "2026-06-18"
+        "expiry": "2026-06-18",
+        "userEmail": userEmail,
       },
     ];
 

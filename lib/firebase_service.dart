@@ -101,6 +101,11 @@ class FirebaseService {
   // Add a new product to Firestore
   Future<String> addProduct(Map<String, dynamic> productData) async {
     try {
+      // Add user email to product data
+      if (_auth.currentUser != null) {
+        productData['userEmail'] = _auth.currentUser!.email;
+      }
+      
       DocumentReference docRef = await _firestore.collection('products').add(productData);
       return docRef.id;
     } catch (e) {
@@ -108,10 +113,19 @@ class FirebaseService {
     }
   }
 
-  // Get all products from Firestore
+  // Get all products from Firestore (filtered by current user)
   Future<List<Map<String, dynamic>>> getProducts() async {
     try {
-      QuerySnapshot querySnapshot = await _firestore.collection('products').get();
+      // Check if user is logged in
+      if (_auth.currentUser == null || _auth.currentUser!.email == null) {
+        throw Exception('User not logged in');
+      }
+      
+      // Filter products by current user's email
+      QuerySnapshot querySnapshot = await _firestore
+          .collection('products')
+          .where('userEmail', isEqualTo: _auth.currentUser!.email)
+          .get();
       
       List<Map<String, dynamic>> products = [];
       for (var doc in querySnapshot.docs) {
@@ -126,9 +140,18 @@ class FirebaseService {
     }
   }
 
-  // Get products stream for real-time updates
+  // Get products stream for real-time updates (filtered by current user)
   Stream<List<Map<String, dynamic>>> getProductsStream() {
-    return _firestore.collection('products').snapshots().map((snapshot) {
+    // Check if user is logged in
+    if (_auth.currentUser == null || _auth.currentUser!.email == null) {
+      return Stream.value([]); // Return empty stream if no user
+    }
+    
+    return _firestore
+        .collection('products')
+        .where('userEmail', isEqualTo: _auth.currentUser!.email)
+        .snapshots()
+        .map((snapshot) {
       List<Map<String, dynamic>> products = [];
       for (var doc in snapshot.docs) {
         Map<String, dynamic> productData = Map<String, dynamic>.from(doc.data() as Map);
@@ -139,32 +162,80 @@ class FirebaseService {
     });
   }
 
-  // Update a product in Firestore
+  // Update a product in Firestore (only if it belongs to current user)
   Future<void> updateProduct(String productId, Map<String, dynamic> productData) async {
     try {
+      // Check if user is logged in
+      if (_auth.currentUser == null || _auth.currentUser!.email == null) {
+        throw Exception('User not logged in');
+      }
+      
+      // First, verify that the product belongs to the current user
+      DocumentSnapshot doc = await _firestore.collection('products').doc(productId).get();
+      if (!doc.exists) {
+        throw Exception('Product not found');
+      }
+      
+      Map<String, dynamic> existingData = Map<String, dynamic>.from(doc.data() as Map);
+      if (existingData['userEmail'] != _auth.currentUser!.email) {
+        throw Exception('Access denied - product does not belong to current user');
+      }
+      
+      // Add updated timestamp and ensure userEmail is preserved
+      productData['updatedAt'] = DateTime.now().toIso8601String();
+      productData['userEmail'] = _auth.currentUser!.email;
+      
       await _firestore.collection('products').doc(productId).update(productData);
     } catch (e) {
       rethrow;
     }
   }
 
-  // Delete a product from Firestore
+  // Delete a product from Firestore (only if it belongs to current user)
   Future<void> deleteProduct(String productId) async {
     try {
+      // Check if user is logged in
+      if (_auth.currentUser == null || _auth.currentUser!.email == null) {
+        throw Exception('User not logged in');
+      }
+      
+      // First, verify that the product belongs to the current user
+      DocumentSnapshot doc = await _firestore.collection('products').doc(productId).get();
+      if (!doc.exists) {
+        throw Exception('Product not found');
+      }
+      
+      Map<String, dynamic> existingData = Map<String, dynamic>.from(doc.data() as Map);
+      if (existingData['userEmail'] != _auth.currentUser!.email) {
+        throw Exception('Access denied - product does not belong to current user');
+      }
+      
       await _firestore.collection('products').doc(productId).delete();
     } catch (e) {
       rethrow;
     }
   }
 
-  // Get a single product by ID
+  // Get a single product by ID (only if it belongs to current user)
   Future<Map<String, dynamic>?> getProduct(String productId) async {
     try {
+      // Check if user is logged in
+      if (_auth.currentUser == null || _auth.currentUser!.email == null) {
+        throw Exception('User not logged in');
+      }
+      
       DocumentSnapshot doc = await _firestore.collection('products').doc(productId).get();
       if (doc.exists) {
         Map<String, dynamic> productData = Map<String, dynamic>.from(doc.data() as Map);
-        productData['id'] = doc.id;
-        return productData;
+        
+        // Check if the product belongs to the current user
+        if (productData['userEmail'] == _auth.currentUser!.email) {
+          productData['id'] = doc.id;
+          return productData;
+        } else {
+          // Product doesn't belong to current user
+          throw Exception('Product not found or access denied');
+        }
       }
       return null;
     } catch (e) {
