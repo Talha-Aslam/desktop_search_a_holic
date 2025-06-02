@@ -79,18 +79,17 @@ class _AddProduct extends State<AddProduct> {
 
       // Save to Firestore using FirebaseService
       await _firebaseService.addProduct(productData);
-      
+
       // Show success message
       showAlert1();
-      
+
       // Clear all fields
       _clearForm();
-      
+
       // Return success to parent page
       if (mounted) {
         Navigator.pop(context, true);
       }
-      
     } catch (e) {
       // Show error message
       if (mounted) {
@@ -368,7 +367,13 @@ class _AddProduct extends State<AddProduct> {
                               context,
                               "Product Category",
                               Icons.category,
-                              ["Medicine", "Supplements", "First Aid", "Hygiene", "Other"],
+                              [
+                                "Medicine",
+                                "Supplements",
+                                "First Aid",
+                                "Hygiene",
+                                "Other"
+                              ],
                               (value) {
                                 _productCategory.text = value.toString();
                               },
