@@ -65,6 +65,23 @@ class _AddProduct extends State<AddProduct> {
     });
 
     try {
+      // Get current user for shop ID
+      final user = _firebaseService.currentUser;
+      String? shopId;
+      
+      // Get shop ID from user profile if available
+      if (user != null) {
+        try {
+          final userData = await _firebaseService.getUserData(user.uid);
+          if (userData.exists) {
+            final data = userData.data() as Map<String, dynamic>;
+            shopId = data['shopId'];
+          }
+        } catch (e) {
+          print('Error getting shop ID: $e');
+        }
+      }
+      
       // Create product data map
       Map<String, dynamic> productData = {
         'name': _productName.text.trim(),
@@ -76,6 +93,11 @@ class _AddProduct extends State<AddProduct> {
         'userEmail': _firebaseService.currentUser?.email ?? '',
         'createdAt': DateTime.now().toIso8601String(),
       };
+      
+      // Add shop ID to product data if available
+      if (shopId != null && shopId.isNotEmpty) {
+        productData['shopId'] = shopId;
+      }
 
       // Save to Firestore using FirebaseService
       await _firebaseService.addProduct(productData);

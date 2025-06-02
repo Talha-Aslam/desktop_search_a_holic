@@ -1,10 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class Sidebar extends StatelessWidget {
+class Sidebar extends StatefulWidget {
   const Sidebar({super.key});
 
+  @override
+  State<Sidebar> createState() => _SidebarState();
+}
+
+class _SidebarState extends State<Sidebar> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+  
+  Future<void> _loadUserData() async {
+    if (_auth.currentUser != null) {
+      try {
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(_auth.currentUser!.uid)
+            .get();
+            
+        if (userDoc.exists) {
+          setState(() {
+            _userData = userDoc.data() as Map<String, dynamic>?;
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        print('Error loading user data: $e');
+      }
+    }
+    
+    setState(() {
+      _isLoading = false;
+    });
+  }
+  
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -163,51 +205,76 @@ class Sidebar extends StatelessWidget {
                   text: 'Logout',
                   route: '/login',
                   isLogout: true,
+                  onTap: () async {
+                    // Sign out the user before navigating
+                    try {
+                      await _auth.signOut();
+                      Navigator.pushNamedAndRemoveUntil(
+                        context, '/login', (Route<dynamic> route) => false);
+                    } catch (e) {
+                      print('Error signing out: $e');
+                    }
+                  },
                 ),
               ],
             ),
           ),
-          // User info at bottom of sidebar
+          // User info at bottom of sidebar - Dynamic from Firestore
           Container(
             color: themeProvider.isDarkMode
                 ? const Color(0xFF252525)
                 : const Color(0xFFF5F5F5),
             padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 16,
-                  backgroundImage: AssetImage('images/profile.jpg'),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Admin User',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: themeProvider.isDarkMode
-                              ? Colors.white
-                              : Colors.black,
+            child: _isLoading
+                ? Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          themeProvider.gradientColors[0],
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'admin@example.com',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: themeProvider.isDarkMode
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade700,
+                    ),
+                  )
+                : Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 16,
+                        backgroundImage: AssetImage('images/profile.jpg'),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _userData != null ? _userData!['name'] ?? 'User' : 
+                              (_auth.currentUser?.displayName ?? 'Guest User'),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: themeProvider.isDarkMode
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _userData != null ? _userData!['email'] ?? 'No email' : 
+                              (_auth.currentUser?.email ?? 'Not logged in'),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: themeProvider.isDarkMode
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -220,6 +287,7 @@ class Sidebar extends StatelessWidget {
     required String text,
     required String route,
     bool isLogout = false,
+    Function()? onTap,
   }) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     return ListTile(
@@ -242,7 +310,7 @@ class Sidebar extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-      onTap: () {
+      onTap: onTap ?? () {
         if (isLogout) {
           Navigator.pushNamedAndRemoveUntil(
               context, route, (Route<dynamic> route) => false);
