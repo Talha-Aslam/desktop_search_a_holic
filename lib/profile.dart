@@ -343,7 +343,7 @@ class _ProfileState extends State<Profile> {
                                     label: 'Address',
                                     controller: _addressController,
                                     icon: Icons.location_on,
-                                    isEditable: _isEditing,
+                                    isEditable: false, // Location should not be editable after creation
                                   ),
                                   const Divider(),
                                   _buildProfileField(

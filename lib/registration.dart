@@ -21,6 +21,7 @@ class _RegistrationState extends State<Registration> {
       TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _shopIdController = TextEditingController(); // Added shop ID controller
+  final TextEditingController _addressController = TextEditingController(); // Added address controller
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -52,6 +53,7 @@ class _RegistrationState extends State<Registration> {
     _confirmPasswordController.dispose();
     _phoneController.dispose();
     _shopIdController.dispose(); // Dispose shop ID controller
+    _addressController.dispose(); // Dispose address controller
     super.dispose();
   }
 
@@ -86,6 +88,7 @@ class _RegistrationState extends State<Registration> {
         'email': _emailController.text.trim(),
         'phone': _phoneController.text,
         'shopId': _shopIdController.text, // Store shop ID
+        'address': _addressController.text, // Store address
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -155,42 +158,7 @@ class _RegistrationState extends State<Registration> {
     return 'Strong';
   }
 
-  void _register() {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      // Simulate API call with a delay
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() {
-          _isLoading = false;
-        });
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registration successful!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-
-        // Clear the form fields
-        _nameController.clear();
-        _emailController.clear();
-        _passwordController.clear();
-        _confirmPasswordController.clear();
-        _phoneController.clear();
-        _shopIdController.clear(); // Clear shop ID field
-
-        // Navigate to login page after a short delay
-        Future.delayed(const Duration(seconds: 2), () {
-          Navigator.pushReplacementNamed(context, '/login');
-        });
-      });
-    }
-  }
+  // This was an unused method and has been removed
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
@@ -489,6 +457,50 @@ class _RegistrationState extends State<Registration> {
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your shop ID';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // Address field
+                    TextFormField(
+                      controller: _addressController,
+                      decoration: InputDecoration(
+                        labelText: 'Address',
+                        labelStyle: const TextStyle(color: Colors.white),
+                        hintText: 'Enter your shop address',
+                        hintStyle:
+                            TextStyle(color: Colors.white.withOpacity(0.7)),
+                        helperText: 'This address will be permanent',
+                        helperStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
+                        prefixIcon:
+                            const Icon(Icons.location_on, color: Colors.white),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Colors.white),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide:
+                              const BorderSide(color: Colors.white, width: 2),
+                        ),
+                        errorStyle: const TextStyle(
+                          color: Colors.yellow,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        filled: !themeProvider.isDarkMode,
+                        fillColor: !themeProvider.isDarkMode
+                            ? Colors.black.withOpacity(0.3)
+                            : Colors.transparent,
+                      ),
+                      style: const TextStyle(color: Colors.white),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your shop address';
                         }
                         return null;
                       },
