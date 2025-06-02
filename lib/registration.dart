@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/foundation.dart';
 
 class Registration extends StatefulWidget {
   const Registration({super.key});
@@ -21,11 +22,11 @@ class _RegistrationState extends State<Registration> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _shopIdController = TextEditingController(); // Added shop ID controller
-  final TextEditingController _addressController = TextEditingController(); // Address controller for display only
-  
+  final TextEditingController _shopIdController =
+      TextEditingController(); // Added shop ID controller
+  final TextEditingController _addressController =
+      TextEditingController(); // Address controller for display only
   Position? _currentPosition;
-  String _currentAddress = "No location selected";
   bool _isLocationLoading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -62,93 +63,101 @@ class _RegistrationState extends State<Registration> {
     _addressController.dispose(); // Dispose address controller
     super.dispose();
   }
-  
+
   // Check and request location permissions
   Future<void> _checkLocationPermission() async {
-    final status = await Permission.location.status;
-    if (status.isGranted) {
-      // Permission already granted
+    // Skip permission check for web platform
+    if (kIsWeb) {
       return;
-    } else if (status.isDenied) {
-      // Request permission
-      await Permission.location.request();
+    }
+
+    try {
+      final status = await Permission.location.status;
+      if (status.isGranted) {
+        // Permission already granted
+        return;
+      } else if (status.isDenied) {
+        // Request permission
+        await Permission.location.request();
+      }
+    } catch (e) {
+      print('Permission check error: $e');
+      // Continue without permission check on Windows if it fails
     }
   }
-  
+
   // Check if location services are enabled
   Future<bool> _checkLocationServicesEnabled() async {
+    // Skip service check for web platform
+    if (kIsWeb) {
+      return true; // Assume available on web, will handle errors in the actual request
+    }
+
     bool serviceEnabled;
-    
+
     // Test if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       // Location services are disabled
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Location services are disabled. Please enable them in your device settings.'),
+          content: Text(
+              'Location services are disabled. Please enable them in your device settings.'),
+          action: SnackBarAction(
+            label: 'Enter manually',
+            onPressed: _showManualAddressInputDialog,
+          ),
           duration: Duration(seconds: 4),
         ),
       );
       return false;
     }
-    
+
     return true;
   }
-  
+
   // Get current location and convert to address
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isLocationLoading = true;
     });
-    
+
     try {
-      // Check permission first
-      final permissionStatus = await Permission.location.status;
-      if (!permissionStatus.isGranted) {
-        final result = await Permission.location.request();
-        if (result != PermissionStatus.granted) {
-          // Show dialog to manually enter address if permission denied
-          _showManualAddressInputDialog();
-          return;
+      // Check if running on web - different handling required
+      if (kIsWeb) {
+        await _handleWebLocation();
+        return;
+      } // Check permission first (for mobile and desktop platforms)
+      try {
+        final permissionStatus = await Permission.location.status;
+        if (!permissionStatus.isGranted) {
+          final result = await Permission.location.request();
+          if (result != PermissionStatus.granted) {
+            // Show dialog to manually enter address if permission denied
+            _showManualAddressInputDialog();
+            return;
+          }
         }
+      } catch (e) {
+        // On Windows, location permission might not be available through permission_handler
+        // Continue with location request and handle errors gracefully
+        print('Permission handling not supported on this platform: $e');
       }
-      
+
       // Check if location services are enabled
       final servicesEnabled = await _checkLocationServicesEnabled();
       if (!servicesEnabled) {
         return;
       }
-      
+
       // Get current position
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 10), // Add timeout
       );
-      
-      // Convert position to address
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude
-      );
-      
-      if (placemarks.isNotEmpty) {
-        final placemark = placemarks[0];
-        final address = 
-          '${placemark.street ?? ''}, '
-          '${placemark.subLocality ?? ''}, '
-          '${placemark.locality ?? ''}, '
-          '${placemark.administrativeArea ?? ''}, '
-          '${placemark.country ?? ''} '
-          '${placemark.postalCode ?? ''}';
-          
-        // Clean up the address for better readability
-        final cleanedAddress = _cleanUpAddress(address);
-        
-        setState(() {
-          _currentPosition = position;
-          _currentAddress = cleanedAddress;
-          _addressController.text = cleanedAddress; // Update the address controller
-        });
-      }
+
+      // Convert position to address (may not work on web)
+      await _convertPositionToAddress(position);
     } catch (e) {
       print('Error getting location: $e');
       // Handle geocoding errors
@@ -160,18 +169,153 @@ class _RegistrationState extends State<Registration> {
     }
   }
 
+  // Handle web-specific location requests
+  Future<void> _handleWebLocation() async {
+    try {
+      // Check if geolocation is available in browser
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _showManualAddressInputDialog();
+          return;
+        }
+      }
+
+      // Try to get position on web
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 10),
+      );
+
+      // For web, we'll just use coordinates and ask user to enter address manually
+      setState(() {
+        _currentPosition = position;
+        _addressController.text =
+            'Location: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+      });
+
+      // Show success message with option to enter manual address
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Location coordinates obtained. You may enter a more descriptive address.'),
+          action: SnackBarAction(
+            label: 'Enter Address',
+            onPressed: _showManualAddressInputDialog,
+          ),
+          duration: Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      print('Web location error: $e');
+      // Fallback to manual address input for web
+      _showManualAddressInputDialog();
+    }
+  }
+
+  // Convert position to address (separate method for better error handling)
+  Future<void> _convertPositionToAddress(Position position) async {
+    try {
+      // Convert position to address (may not work on web)
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks[0];
+        final address = '${placemark.street ?? ''}, '
+            '${placemark.subLocality ?? ''}, '
+            '${placemark.locality ?? ''}, '
+            '${placemark.administrativeArea ?? ''}, '
+            '${placemark.country ?? ''} '
+            '${placemark.postalCode ?? ''}';
+
+        // Clean up the address for better readability
+        final cleanedAddress = _cleanUpAddress(address);
+        setState(() {
+          _currentPosition = position;
+          _addressController.text = cleanedAddress;
+        });
+
+        // Show success message for full address
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Address successfully retrieved!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        // If no placemark found, use coordinates but don't show error
+        setState(() {
+          _currentPosition = position;
+          _addressController.text =
+              'Location: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+        });
+
+        // Show informational message only
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Location coordinates set. You may add a descriptive address if needed.'),
+            action: SnackBarAction(
+              label: 'Add Address',
+              onPressed: _showManualAddressInputDialog,
+            ),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Geocoding error: $e');
+      // If geocoding fails, just use coordinates without showing error
+      setState(() {
+        _currentPosition = position;
+        _addressController.text =
+            'Location: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+      });
+
+      // Only show gentle suggestion, not an error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Location set with coordinates. You may add a descriptive address if needed.'),
+          action: SnackBarAction(
+            label: 'Add Address',
+            onPressed: _showManualAddressInputDialog,
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   // Handle geocoding errors
   void _handleGeocodingError(dynamic error) {
     String errorMessage;
-    
-    if (error is PermissionDeniedException) {
+
+    if (kIsWeb) {
+      // Web-specific error handling
+      errorMessage =
+          'Location access may be limited in web browsers. Please enter your address manually.';
+    } else if (error is PermissionDeniedException) {
       errorMessage = 'Location permission denied';
     } else if (error is LocationServiceDisabledException) {
       errorMessage = 'Location services are disabled';
+    } else if (error.toString().contains('null')) {
+      errorMessage =
+          'Location service unavailable. Please enter your address manually.';
+    } else if (error.toString().contains('PlatformException')) {
+      // Handle Windows-specific platform exceptions
+      errorMessage =
+          'Location service not available on this device. Please enter your address manually.';
     } else {
-      errorMessage = 'Failed to get location: $error';
+      errorMessage =
+          'Failed to get location: Please enter your address manually.';
     }
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(errorMessage),
@@ -183,15 +327,16 @@ class _RegistrationState extends State<Registration> {
       ),
     );
   }
-  
+
   // Show dialog to manually input address
   void _showManualAddressInputDialog() {
-    final TextEditingController manualAddressController = TextEditingController();
-    
+    final TextEditingController manualAddressController =
+        TextEditingController();
+
     setState(() {
       _isLocationLoading = false;
     });
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -206,13 +351,18 @@ class _RegistrationState extends State<Registration> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Please enter your shop address manually.',
+              kIsWeb
+                  ? 'Location services may be limited in web browsers. Please enter your shop address manually.'
+                  : 'Please enter your shop address manually.',
               style: TextStyle(fontSize: 14),
             ),
             SizedBox(height: 8),
             Text(
               'Note: Manual address entry will not include exact map coordinates.',
-              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.orange),
+              style: TextStyle(
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.orange),
             ),
             SizedBox(height: 16),
             TextField(
@@ -248,7 +398,7 @@ class _RegistrationState extends State<Registration> {
                   _currentPosition = null;
                 });
                 Navigator.of(context).pop();
-                
+
                 // Show message about manual address
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -284,7 +434,7 @@ class _RegistrationState extends State<Registration> {
       );
       return;
     }
-    
+
     // Check if a location has been selected
     if (_addressController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -299,7 +449,8 @@ class _RegistrationState extends State<Registration> {
 
     try {
       // Create user with email and password
-      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      final UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -313,7 +464,7 @@ class _RegistrationState extends State<Registration> {
         'address': _addressController.text, // Store address
         'createdAt': FieldValue.serverTimestamp(),
       };
-      
+
       // Add location coordinates if available
       if (_currentPosition != null) {
         userData['location'] = {
@@ -321,12 +472,16 @@ class _RegistrationState extends State<Registration> {
           'longitude': _currentPosition!.longitude
         };
       }
-      
-      await _firestore.collection('users').doc(userCredential.user!.uid).set(userData);
+
+      await _firestore
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set(userData);
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration successful! You can now login.')),
+        const SnackBar(
+            content: Text('Registration successful! You can now login.')),
       );
 
       // Navigate to login page
@@ -394,13 +549,14 @@ class _RegistrationState extends State<Registration> {
   String _cleanUpAddress(String address) {
     // Replace multiple commas with a single comma
     String cleaned = address.replaceAll(RegExp(r',\s*,'), ',');
-    
+
     // Split by comma and filter out empty parts
-    List<String> parts = cleaned.split(',')
+    List<String> parts = cleaned
+        .split(',')
         .map((part) => part.trim())
         .where((part) => part.isNotEmpty)
         .toList();
-    
+
     // Join parts back with commas
     return parts.join(', ');
   }
@@ -674,7 +830,8 @@ class _RegistrationState extends State<Registration> {
                         hintStyle:
                             TextStyle(color: Colors.white.withOpacity(0.7)),
                         helperText: 'This unique ID identifies your business',
-                        helperStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
+                        helperStyle:
+                            TextStyle(color: Colors.white.withOpacity(0.8)),
                         prefixIcon:
                             const Icon(Icons.store, color: Colors.white),
                         border: OutlineInputBorder(
@@ -714,7 +871,8 @@ class _RegistrationState extends State<Registration> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.location_on, color: Colors.white, size: 18),
+                            Icon(Icons.location_on,
+                                color: Colors.white, size: 18),
                             SizedBox(width: 8),
                             Text(
                               'Shop Location (Required)',
@@ -776,14 +934,17 @@ class _RegistrationState extends State<Registration> {
                                           height: 24,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                                Colors.white),
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    Colors.white),
                                           ),
                                         )
                                       else if (!_addressController.text.isEmpty)
                                         IconButton(
-                                          icon: Icon(Icons.refresh, color: Colors.white),
-                                          onPressed: () => _getCurrentLocation(),
+                                          icon: Icon(Icons.refresh,
+                                              color: Colors.white),
+                                          onPressed: () =>
+                                              _getCurrentLocation(),
                                           tooltip: 'Update location',
                                         ),
                                     ],
@@ -797,7 +958,8 @@ class _RegistrationState extends State<Registration> {
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             _addressController.text,
@@ -850,8 +1012,10 @@ class _RegistrationState extends State<Registration> {
                           children: [
                             if (_addressController.text.isEmpty)
                               TextButton.icon(
-                                onPressed: () => _showManualAddressInputDialog(),
-                                icon: Icon(Icons.edit_location_alt, color: Colors.white70, size: 18),
+                                onPressed: () =>
+                                    _showManualAddressInputDialog(),
+                                icon: Icon(Icons.edit_location_alt,
+                                    color: Colors.white70, size: 18),
                                 label: Text(
                                   'Enter address manually',
                                   style: TextStyle(color: Colors.white70),
