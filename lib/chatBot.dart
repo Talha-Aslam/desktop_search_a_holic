@@ -17,6 +17,8 @@ class ChatMessage {
 }
 
 class ChatBotPage extends StatefulWidget {
+  const ChatBotPage({super.key});
+
   @override
   _ChatBotPageState createState() => _ChatBotPageState();
 }
@@ -560,8 +562,8 @@ class AnimatedOpacityWidget extends StatefulWidget {
   const AnimatedOpacityWidget({
     required this.child,
     this.delay = 0,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _AnimatedOpacityWidgetState createState() => _AnimatedOpacityWidgetState();

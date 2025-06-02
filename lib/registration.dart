@@ -21,9 +21,11 @@ class _RegistrationState extends State<Registration> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _shopIdController = TextEditingController(); // Added shop ID controller
-  final TextEditingController _addressController = TextEditingController(); // Address controller for display only
-  
+  final TextEditingController _shopIdController =
+      TextEditingController(); // Added shop ID controller
+  final TextEditingController _addressController =
+      TextEditingController(); // Address controller for display only
+
   Position? _currentPosition;
   String _currentAddress = "No location selected";
   bool _isLocationLoading = false;
@@ -62,7 +64,7 @@ class _RegistrationState extends State<Registration> {
     _addressController.dispose(); // Dispose address controller
     super.dispose();
   }
-  
+
   // Check and request location permissions
   Future<void> _checkLocationPermission() async {
     final status = await Permission.location.status;
@@ -74,33 +76,34 @@ class _RegistrationState extends State<Registration> {
       await Permission.location.request();
     }
   }
-  
+
   // Check if location services are enabled
   Future<bool> _checkLocationServicesEnabled() async {
     bool serviceEnabled;
-    
+
     // Test if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       // Location services are disabled
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Location services are disabled. Please enable them in your device settings.'),
+          content: Text(
+              'Location services are disabled. Please enable them in your device settings.'),
           duration: Duration(seconds: 4),
         ),
       );
       return false;
     }
-    
+
     return true;
   }
-  
+
   // Get current location and convert to address
   Future<void> _getCurrentLocation() async {
     setState(() {
       _isLocationLoading = true;
     });
-    
+
     try {
       // Check permission first
       final permissionStatus = await Permission.location.status;
@@ -112,41 +115,38 @@ class _RegistrationState extends State<Registration> {
           return;
         }
       }
-      
+
       // Check if location services are enabled
       final servicesEnabled = await _checkLocationServicesEnabled();
       if (!servicesEnabled) {
         return;
       }
-      
+
       // Get current position
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high
-      );
-      
+          desiredAccuracy: LocationAccuracy.high);
+
       // Convert position to address
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude
-      );
-      
+      final placemarks =
+          await placemarkFromCoordinates(position.latitude, position.longitude);
+
       if (placemarks.isNotEmpty) {
         final placemark = placemarks[0];
-        final address = 
-          '${placemark.street ?? ''}, '
-          '${placemark.subLocality ?? ''}, '
-          '${placemark.locality ?? ''}, '
-          '${placemark.administrativeArea ?? ''}, '
-          '${placemark.country ?? ''} '
-          '${placemark.postalCode ?? ''}';
-          
+        final address = '${placemark.street ?? ''}, '
+            '${placemark.subLocality ?? ''}, '
+            '${placemark.locality ?? ''}, '
+            '${placemark.administrativeArea ?? ''}, '
+            '${placemark.country ?? ''} '
+            '${placemark.postalCode ?? ''}';
+
         // Clean up the address for better readability
         final cleanedAddress = _cleanUpAddress(address);
-        
+
         setState(() {
           _currentPosition = position;
           _currentAddress = cleanedAddress;
-          _addressController.text = cleanedAddress; // Update the address controller
+          _addressController.text =
+              cleanedAddress; // Update the address controller
         });
       }
     } catch (e) {
@@ -163,7 +163,7 @@ class _RegistrationState extends State<Registration> {
   // Handle geocoding errors
   void _handleGeocodingError(dynamic error) {
     String errorMessage;
-    
+
     if (error is PermissionDeniedException) {
       errorMessage = 'Location permission denied';
     } else if (error is LocationServiceDisabledException) {
@@ -171,7 +171,7 @@ class _RegistrationState extends State<Registration> {
     } else {
       errorMessage = 'Failed to get location: $error';
     }
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(errorMessage),
@@ -183,15 +183,16 @@ class _RegistrationState extends State<Registration> {
       ),
     );
   }
-  
+
   // Show dialog to manually input address
   void _showManualAddressInputDialog() {
-    final TextEditingController manualAddressController = TextEditingController();
-    
+    final TextEditingController manualAddressController =
+        TextEditingController();
+
     setState(() {
       _isLocationLoading = false;
     });
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -212,7 +213,10 @@ class _RegistrationState extends State<Registration> {
             SizedBox(height: 8),
             Text(
               'Note: Manual address entry will not include exact map coordinates.',
-              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.orange),
+              style: TextStyle(
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.orange),
             ),
             SizedBox(height: 16),
             TextField(
@@ -248,7 +252,7 @@ class _RegistrationState extends State<Registration> {
                   _currentPosition = null;
                 });
                 Navigator.of(context).pop();
-                
+
                 // Show message about manual address
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -284,7 +288,7 @@ class _RegistrationState extends State<Registration> {
       );
       return;
     }
-    
+
     // Check if a location has been selected
     if (_addressController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -299,7 +303,8 @@ class _RegistrationState extends State<Registration> {
 
     try {
       // Create user with email and password
-      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      final UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -313,7 +318,7 @@ class _RegistrationState extends State<Registration> {
         'address': _addressController.text, // Store address
         'createdAt': FieldValue.serverTimestamp(),
       };
-      
+
       // Add location coordinates if available
       if (_currentPosition != null) {
         userData['location'] = {
@@ -321,12 +326,16 @@ class _RegistrationState extends State<Registration> {
           'longitude': _currentPosition!.longitude
         };
       }
-      
-      await _firestore.collection('users').doc(userCredential.user!.uid).set(userData);
+
+      await _firestore
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set(userData);
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration successful! You can now login.')),
+        const SnackBar(
+            content: Text('Registration successful! You can now login.')),
       );
 
       // Navigate to login page
@@ -394,13 +403,14 @@ class _RegistrationState extends State<Registration> {
   String _cleanUpAddress(String address) {
     // Replace multiple commas with a single comma
     String cleaned = address.replaceAll(RegExp(r',\s*,'), ',');
-    
+
     // Split by comma and filter out empty parts
-    List<String> parts = cleaned.split(',')
+    List<String> parts = cleaned
+        .split(',')
         .map((part) => part.trim())
         .where((part) => part.isNotEmpty)
         .toList();
-    
+
     // Join parts back with commas
     return parts.join(', ');
   }
@@ -674,7 +684,8 @@ class _RegistrationState extends State<Registration> {
                         hintStyle:
                             TextStyle(color: Colors.white.withOpacity(0.7)),
                         helperText: 'This unique ID identifies your business',
-                        helperStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
+                        helperStyle:
+                            TextStyle(color: Colors.white.withOpacity(0.8)),
                         prefixIcon:
                             const Icon(Icons.store, color: Colors.white),
                         border: OutlineInputBorder(
@@ -714,7 +725,8 @@ class _RegistrationState extends State<Registration> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.location_on, color: Colors.white, size: 18),
+                            Icon(Icons.location_on,
+                                color: Colors.white, size: 18),
                             SizedBox(width: 8),
                             Text(
                               'Shop Location (Required)',
@@ -771,19 +783,23 @@ class _RegistrationState extends State<Registration> {
                                         ),
                                       ),
                                       if (_isLocationLoading)
-                                        Container(
+                                        SizedBox(
                                           width: 24,
                                           height: 24,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                                Colors.white),
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    Colors.white),
                                           ),
                                         )
-                                      else if (!_addressController.text.isEmpty)
+                                      else if (_addressController
+                                          .text.isNotEmpty)
                                         IconButton(
-                                          icon: Icon(Icons.refresh, color: Colors.white),
-                                          onPressed: () => _getCurrentLocation(),
+                                          icon: Icon(Icons.refresh,
+                                              color: Colors.white),
+                                          onPressed: () =>
+                                              _getCurrentLocation(),
                                           tooltip: 'Update location',
                                         ),
                                     ],
@@ -797,7 +813,8 @@ class _RegistrationState extends State<Registration> {
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             _addressController.text,
@@ -850,8 +867,10 @@ class _RegistrationState extends State<Registration> {
                           children: [
                             if (_addressController.text.isEmpty)
                               TextButton.icon(
-                                onPressed: () => _showManualAddressInputDialog(),
-                                icon: Icon(Icons.edit_location_alt, color: Colors.white70, size: 18),
+                                onPressed: () =>
+                                    _showManualAddressInputDialog(),
+                                icon: Icon(Icons.edit_location_alt,
+                                    color: Colors.white70, size: 18),
                                 label: Text(
                                   'Enter address manually',
                                   style: TextStyle(color: Colors.white70),
@@ -1041,7 +1060,7 @@ class _RegistrationState extends State<Registration> {
                           value: true,
                           onChanged: (value) {},
                           checkColor: themeProvider.gradientColors[0],
-                          fillColor: MaterialStateProperty.all(Colors.white),
+                          fillColor: WidgetStateProperty.all(Colors.white),
                         ),
                         Expanded(
                           child: Text(
