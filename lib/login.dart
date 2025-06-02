@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:desktop_search_a_holic/imports.dart';
 
 class Login extends StatefulWidget {
@@ -304,12 +302,14 @@ class _LoginState extends State<Login> {
                       child: _isLoading
                           ? Center(
                               child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
                           : ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                foregroundColor: themeProvider.gradientColors[0],
+                                foregroundColor:
+                                    themeProvider.gradientColors[0],
                                 backgroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
