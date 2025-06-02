@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class Registration extends StatefulWidget {
   const Registration({super.key});
@@ -21,7 +22,11 @@ class _RegistrationState extends State<Registration> {
       TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _shopIdController = TextEditingController(); // Added shop ID controller
-  final TextEditingController _addressController = TextEditingController(); // Added address controller
+  final TextEditingController _addressController = TextEditingController(); // Address controller for display only
+  
+  Position? _currentPosition;
+  String _currentAddress = "No location selected";
+  bool _isLocationLoading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -42,6 +47,7 @@ class _RegistrationState extends State<Registration> {
   void initState() {
     super.initState();
     _passwordController.addListener(_checkPasswordStrength);
+    _checkLocationPermission();
   }
 
   @override
@@ -56,6 +62,214 @@ class _RegistrationState extends State<Registration> {
     _addressController.dispose(); // Dispose address controller
     super.dispose();
   }
+  
+  // Check and request location permissions
+  Future<void> _checkLocationPermission() async {
+    final status = await Permission.location.status;
+    if (status.isGranted) {
+      // Permission already granted
+      return;
+    } else if (status.isDenied) {
+      // Request permission
+      await Permission.location.request();
+    }
+  }
+  
+  // Check if location services are enabled
+  Future<bool> _checkLocationServicesEnabled() async {
+    bool serviceEnabled;
+    
+    // Test if location services are enabled
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Location services are disabled
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Location services are disabled. Please enable them in your device settings.'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+      return false;
+    }
+    
+    return true;
+  }
+  
+  // Get current location and convert to address
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _isLocationLoading = true;
+    });
+    
+    try {
+      // Check permission first
+      final permissionStatus = await Permission.location.status;
+      if (!permissionStatus.isGranted) {
+        final result = await Permission.location.request();
+        if (result != PermissionStatus.granted) {
+          // Show dialog to manually enter address if permission denied
+          _showManualAddressInputDialog();
+          return;
+        }
+      }
+      
+      // Check if location services are enabled
+      final servicesEnabled = await _checkLocationServicesEnabled();
+      if (!servicesEnabled) {
+        return;
+      }
+      
+      // Get current position
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high
+      );
+      
+      // Convert position to address
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude
+      );
+      
+      if (placemarks.isNotEmpty) {
+        final placemark = placemarks[0];
+        final address = 
+          '${placemark.street ?? ''}, '
+          '${placemark.subLocality ?? ''}, '
+          '${placemark.locality ?? ''}, '
+          '${placemark.administrativeArea ?? ''}, '
+          '${placemark.country ?? ''} '
+          '${placemark.postalCode ?? ''}';
+          
+        // Clean up the address for better readability
+        final cleanedAddress = _cleanUpAddress(address);
+        
+        setState(() {
+          _currentPosition = position;
+          _currentAddress = cleanedAddress;
+          _addressController.text = cleanedAddress; // Update the address controller
+        });
+      }
+    } catch (e) {
+      print('Error getting location: $e');
+      // Handle geocoding errors
+      _handleGeocodingError(e);
+    } finally {
+      setState(() {
+        _isLocationLoading = false;
+      });
+    }
+  }
+
+  // Handle geocoding errors
+  void _handleGeocodingError(dynamic error) {
+    String errorMessage;
+    
+    if (error is PermissionDeniedException) {
+      errorMessage = 'Location permission denied';
+    } else if (error is LocationServiceDisabledException) {
+      errorMessage = 'Location services are disabled';
+    } else {
+      errorMessage = 'Failed to get location: $error';
+    }
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(errorMessage),
+        action: SnackBarAction(
+          label: 'Enter manually',
+          onPressed: _showManualAddressInputDialog,
+        ),
+        duration: Duration(seconds: 5),
+      ),
+    );
+  }
+  
+  // Show dialog to manually input address
+  void _showManualAddressInputDialog() {
+    final TextEditingController manualAddressController = TextEditingController();
+    
+    setState(() {
+      _isLocationLoading = false;
+    });
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.edit_location_alt, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Enter Shop Address'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Please enter your shop address manually.',
+              style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Note: Manual address entry will not include exact map coordinates.',
+              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.orange),
+            ),
+            SizedBox(height: 16),
+            TextField(
+              controller: manualAddressController,
+              decoration: InputDecoration(
+                labelText: 'Shop Address',
+                hintText: 'Enter complete address with city and postal code',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.home),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton.icon(
+            icon: Icon(Icons.cancel),
+            label: Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          ElevatedButton.icon(
+            icon: Icon(Icons.save),
+            label: Text('Save Address'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              if (manualAddressController.text.trim().isNotEmpty) {
+                setState(() {
+                  _addressController.text = manualAddressController.text.trim();
+                  // Clear position data as we don't have coordinates for manual address
+                  _currentPosition = null;
+                });
+                Navigator.of(context).pop();
+                
+                // Show message about manual address
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Manual address saved successfully'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Please enter a valid address'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
   // Register user with Firebase
   Future<void> registerUser() async {
@@ -67,6 +281,14 @@ class _RegistrationState extends State<Registration> {
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+    
+    // Check if a location has been selected
+    if (_addressController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please set your shop location')),
       );
       return;
     }
@@ -83,14 +305,24 @@ class _RegistrationState extends State<Registration> {
       );
 
       // Store additional user data in Firestore
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
+      Map<String, dynamic> userData = {
         'name': _nameController.text,
         'email': _emailController.text.trim(),
         'phone': _phoneController.text,
         'shopId': _shopIdController.text, // Store shop ID
         'address': _addressController.text, // Store address
         'createdAt': FieldValue.serverTimestamp(),
-      });
+      };
+      
+      // Add location coordinates if available
+      if (_currentPosition != null) {
+        userData['location'] = {
+          'latitude': _currentPosition!.latitude,
+          'longitude': _currentPosition!.longitude
+        };
+      }
+      
+      await _firestore.collection('users').doc(userCredential.user!.uid).set(userData);
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
@@ -158,7 +390,20 @@ class _RegistrationState extends State<Registration> {
     return 'Strong';
   }
 
-  // This was an unused method and has been removed
+  // Clean up address string by removing empty parts and extra commas
+  String _cleanUpAddress(String address) {
+    // Replace multiple commas with a single comma
+    String cleaned = address.replaceAll(RegExp(r',\s*,'), ',');
+    
+    // Split by comma and filter out empty parts
+    List<String> parts = cleaned.split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+    
+    // Join parts back with commas
+    return parts.join(', ');
+  }
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
@@ -463,47 +708,158 @@ class _RegistrationState extends State<Registration> {
                     ),
                     const SizedBox(height: 16.0),
 
-                    // Address field
-                    TextFormField(
-                      controller: _addressController,
-                      decoration: InputDecoration(
-                        labelText: 'Address',
-                        labelStyle: const TextStyle(color: Colors.white),
-                        hintText: 'Enter your shop address',
-                        hintStyle:
-                            TextStyle(color: Colors.white.withOpacity(0.7)),
-                        helperText: 'This address will be permanent',
-                        helperStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
-                        prefixIcon:
-                            const Icon(Icons.location_on, color: Colors.white),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                    // Address/Location field with automatic location detection
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.location_on, color: Colors.white, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'Shop Location (Required)',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Colors.white),
+                        const SizedBox(height: 8.0),
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white),
+                          ),
+                          child: InkWell(
+                            onTap: () {
+                              if (!_isLocationLoading) {
+                                _getCurrentLocation();
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(10),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        _addressController.text.isEmpty
+                                            ? Icons.add_location_alt
+                                            : Icons.check_circle,
+                                        color: _addressController.text.isEmpty
+                                            ? Colors.white
+                                            : Colors.green,
+                                        size: 22,
+                                      ),
+                                      SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          _addressController.text.isEmpty
+                                              ? 'Tap to set your shop location'
+                                              : 'Location successfully set',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                      if (_isLocationLoading)
+                                        Container(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
+                                          ),
+                                        )
+                                      else if (!_addressController.text.isEmpty)
+                                        IconButton(
+                                          icon: Icon(Icons.refresh, color: Colors.white),
+                                          onPressed: () => _getCurrentLocation(),
+                                          tooltip: 'Update location',
+                                        ),
+                                    ],
+                                  ),
+                                  if (_addressController.text.isNotEmpty) ...[
+                                    SizedBox(height: 10),
+                                    Container(
+                                      padding: EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _addressController.text,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            '⚠️ This address will be permanent and cannot be changed later',
+                                            style: TextStyle(
+                                              color: Colors.yellow,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide:
-                              const BorderSide(color: Colors.white, width: 2),
+                        const SizedBox(height: 8.0),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: Colors.white.withOpacity(0.7),
+                              size: 14,
+                            ),
+                            SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'You can tap the location area or manually enter your address if needed',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        errorStyle: const TextStyle(
-                          color: Colors.yellow,
-                          fontWeight: FontWeight.bold,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (_addressController.text.isEmpty)
+                              TextButton.icon(
+                                onPressed: () => _showManualAddressInputDialog(),
+                                icon: Icon(Icons.edit_location_alt, color: Colors.white70, size: 18),
+                                label: Text(
+                                  'Enter address manually',
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                              ),
+                          ],
                         ),
-                        filled: !themeProvider.isDarkMode,
-                        fillColor: !themeProvider.isDarkMode
-                            ? Colors.black.withOpacity(0.3)
-                            : Colors.transparent,
-                      ),
-                      style: const TextStyle(color: Colors.white),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your shop address';
-                        }
-                        return null;
-                      },
+                      ],
                     ),
                     const SizedBox(height: 16.0),
 

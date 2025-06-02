@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   desktop_window
   firebase_auth
   firebase_core
+  geolocator_windows
   permission_handler_windows
   qr_bar_code
   url_launcher_windows

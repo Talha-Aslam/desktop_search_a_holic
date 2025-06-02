@@ -340,10 +340,19 @@ class _ProfileState extends State<Profile> {
                                   const Divider(),
                                   _buildProfileField(
                                     context: context,
-                                    label: 'Address',
+                                    label: 'Shop Location',
                                     controller: _addressController,
-                                    icon: Icons.location_on,
+                                    icon: Icons.location_pin,
                                     isEditable: false, // Location should not be editable after creation
+                                    helperText: 'Permanent address set during registration',
+                                    trailing: Tooltip(
+                                      message: 'Location is permanent',
+                                      child: Icon(
+                                        Icons.lock_outline,
+                                        color: Colors.grey.shade500,
+                                        size: 16,
+                                      ),
+                                    ),
                                   ),
                                   const Divider(),
                                   _buildProfileField(
@@ -539,6 +548,8 @@ class _ProfileState extends State<Profile> {
     required IconData icon,
     bool isEditable = false,
     TextInputType keyboardType = TextInputType.text,
+    String? helperText,
+    Widget? trailing,
   }) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
@@ -594,17 +605,34 @@ class _ProfileState extends State<Profile> {
                           ),
                         ),
                       )
-                    : Text(
-                        controller.text,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: themeProvider.textColor,
-                        ),
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            controller.text,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: themeProvider.textColor,
+                            ),
+                          ),
+                          if (helperText != null) ...[
+                            SizedBox(height: 4),
+                            Text(
+                              helperText,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontStyle: FontStyle.italic,
+                                color: themeProvider.textColor.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
               ],
             ),
           ),
+          if (trailing != null) trailing,
         ],
       ),
     );
