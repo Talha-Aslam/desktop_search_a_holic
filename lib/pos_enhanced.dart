@@ -29,7 +29,6 @@ class _POSState extends State<POS> {
   List<Map<String, dynamic>> cart = [];
 
   bool _isLoading = false;
-  bool _searchMode = false;
   bool _advancedSearchVisible = false;
   bool _onlyInStock = false;
   double _subtotal = 0;
@@ -647,56 +646,27 @@ class _POSState extends State<POS> {
             ),
           ),
         ),
-        title: _searchMode
-            ? TextField(
-                controller: _searchController,
-                onChanged: _searchProducts,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Search products...',
-                  hintStyle: const TextStyle(color: Colors.white70),
-                  border: InputBorder.none,
-                  prefixIcon: const Icon(Icons.search, color: Colors.white70),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _advancedSearchVisible
-                          ? Icons.expand_less
-                          : Icons.expand_more,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _advancedSearchVisible = !_advancedSearchVisible;
-                      });
-                    },
-                    tooltip: 'Advanced Search',
-                  ),
-                ),
-                autofocus: true,
-              )
-            : const Text(
-                'Point of Sale',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+        title: const Text(
+          'Point of Sale',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           IconButton(
             icon: Icon(
-              _searchMode ? Icons.close : Icons.search,
+              _advancedSearchVisible
+                  ? Icons.filter_alt
+                  : Icons.filter_alt_outlined,
               color: Colors.white,
             ),
             onPressed: () {
               setState(() {
-                _searchMode = !_searchMode;
-                if (!_searchMode) {
-                  _searchController.clear();
-                  _advancedSearchVisible = false;
-                  filteredProducts = List.from(products);
-                }
+                _advancedSearchVisible = !_advancedSearchVisible;
               });
             },
+            tooltip: 'Advanced Filters',
           ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
@@ -717,7 +687,7 @@ class _POSState extends State<POS> {
               child: Column(
                 children: [
                   // Advanced Search Panel
-                  if (_searchMode && _advancedSearchVisible)
+                  if (_advancedSearchVisible)
                     _buildAdvancedSearchPanel(themeProvider),
 
                   // Main Content
@@ -742,8 +712,64 @@ class _POSState extends State<POS> {
                                   )
                                 : Column(
                                     children: [
+                                      // Search Bar moved from AppBar
                                       Padding(
-                                        padding: const EdgeInsets.all(16),
+                                        padding: const EdgeInsets.fromLTRB(
+                                            16, 16, 16, 8),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: themeProvider.isDarkMode
+                                                ? Colors.grey[800]
+                                                : Colors.grey[200],
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: TextField(
+                                            controller: _searchController,
+                                            onChanged: _searchProducts,
+                                            style: TextStyle(
+                                              color: themeProvider.textColor,
+                                            ),
+                                            decoration: InputDecoration(
+                                              hintText:
+                                                  'Search medicines and products...',
+                                              hintStyle: TextStyle(
+                                                color: themeProvider.textColor
+                                                    .withOpacity(0.6),
+                                              ),
+                                              border: InputBorder.none,
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 15),
+                                              prefixIcon: Icon(
+                                                Icons.search,
+                                                color: themeProvider.iconColor,
+                                              ),
+                                              suffixIcon: IconButton(
+                                                icon: Icon(
+                                                  _advancedSearchVisible
+                                                      ? Icons.expand_less
+                                                      : Icons.expand_more,
+                                                  color:
+                                                      themeProvider.iconColor,
+                                                ),
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _advancedSearchVisible =
+                                                        !_advancedSearchVisible;
+                                                  });
+                                                },
+                                                tooltip: 'Advanced Search',
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      // Products Header
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            16, 8, 16, 8),
                                         child: Row(
                                           children: [
                                             Icon(
