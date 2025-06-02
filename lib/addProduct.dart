@@ -274,7 +274,7 @@ class _AddProduct extends State<AddProduct> {
                                   borderRadius: BorderRadius.circular(8),
                                   borderSide: BorderSide(
                                     color: themeProvider.gradientColors[0]
-                                        .withValues(alpha: 0.5),
+                                        .withOpacity(0.5),
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(

@@ -833,7 +833,11 @@ packages:
       sha256: "254ee5351d6cb365c859e20ee823c3bb479bf4a293c22d17a9f1bf144ce86f7c"
       url: "https://pub.dev"
     source: hosted
+<<<<<<< HEAD
+    version: "1.10.0"
+=======
     version: "1.10.1"
+>>>>>>> 2eb0428a5a485fb95c2dcd8f1ebdc0c5700379dd
   sprintf:
     dependency: transitive
     description:
