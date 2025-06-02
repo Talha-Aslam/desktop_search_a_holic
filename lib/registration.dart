@@ -26,10 +26,7 @@ class _RegistrationState extends State<Registration> {
       TextEditingController(); // Added shop ID controller
   final TextEditingController _addressController =
       TextEditingController(); // Address controller for display only
-<<<<<<< HEAD
 
-=======
->>>>>>> be13a3e6b84fd8c2b84aa7d9a95c13875ccda108
   Position? _currentPosition;
   bool _isLocationLoading = false;
 
@@ -107,13 +104,10 @@ class _RegistrationState extends State<Registration> {
         SnackBar(
           content: Text(
               'Location services are disabled. Please enable them in your device settings.'),
-<<<<<<< HEAD
-=======
           action: SnackBarAction(
             label: 'Enter manually',
             onPressed: _showManualAddressInputDialog,
           ),
->>>>>>> be13a3e6b84fd8c2b84aa7d9a95c13875ccda108
           duration: Duration(seconds: 4),
         ),
       );
@@ -159,40 +153,12 @@ class _RegistrationState extends State<Registration> {
 
       // Get current position
       final position = await Geolocator.getCurrentPosition(
-<<<<<<< HEAD
-          desiredAccuracy: LocationAccuracy.high);
-
-      // Convert position to address
-      final placemarks =
-          await placemarkFromCoordinates(position.latitude, position.longitude);
-
-      if (placemarks.isNotEmpty) {
-        final placemark = placemarks[0];
-        final address = '${placemark.street ?? ''}, '
-            '${placemark.subLocality ?? ''}, '
-            '${placemark.locality ?? ''}, '
-            '${placemark.administrativeArea ?? ''}, '
-            '${placemark.country ?? ''} '
-            '${placemark.postalCode ?? ''}';
-
-        // Clean up the address for better readability
-        final cleanedAddress = _cleanUpAddress(address);
-
-        setState(() {
-          _currentPosition = position;
-          _currentAddress = cleanedAddress;
-          _addressController.text =
-              cleanedAddress; // Update the address controller
-        });
-      }
-=======
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: Duration(seconds: 10), // Add timeout
       );
 
       // Convert position to address (may not work on web)
       await _convertPositionToAddress(position);
->>>>>>> be13a3e6b84fd8c2b84aa7d9a95c13875ccda108
     } catch (e) {
       print('Error getting location: $e');
       // Handle geocoding errors
@@ -331,15 +297,11 @@ class _RegistrationState extends State<Registration> {
   void _handleGeocodingError(dynamic error) {
     String errorMessage;
 
-<<<<<<< HEAD
-    if (error is PermissionDeniedException) {
-=======
     if (kIsWeb) {
       // Web-specific error handling
       errorMessage =
           'Location access may be limited in web browsers. Please enter your address manually.';
     } else if (error is PermissionDeniedException) {
->>>>>>> be13a3e6b84fd8c2b84aa7d9a95c13875ccda108
       errorMessage = 'Location permission denied';
     } else if (error is LocationServiceDisabledException) {
       errorMessage = 'Location services are disabled';
