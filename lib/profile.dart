@@ -17,6 +17,7 @@ class _ProfileState extends State<Profile> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _roleController = TextEditingController();
+  final TextEditingController _shopIdController = TextEditingController();
   bool _isEditing = false;
   bool _isLoading = true; // Add loading state
   final FirebaseService _firebaseService = FirebaseService(); // Add Firebase service
@@ -51,6 +52,7 @@ class _ProfileState extends State<Profile> {
             _phoneController.text = data['phone'] ?? '';
             _addressController.text = data['address'] ?? '';
             _roleController.text = data['role'] ?? 'User';
+            _shopIdController.text = data['shopId'] ?? '';
           });
         } else {
           // If no user document found, create one with basic info
@@ -60,6 +62,7 @@ class _ProfileState extends State<Profile> {
             'phone': '',
             'address': '',
             'role': 'User',
+            'shopId': '', // Empty shop ID, user should set this
           });
           
           // Set default values
@@ -67,6 +70,7 @@ class _ProfileState extends State<Profile> {
           _phoneController.text = '';
           _addressController.text = '';
           _roleController.text = 'User';
+          _shopIdController.text = '';
         }
       } else {
         // Fallback to dummy data if no user is logged in
@@ -100,6 +104,7 @@ class _ProfileState extends State<Profile> {
       "phone": "123-456-7890",
       "address": "123 Main Street, City, Country",
       "role": "Administrator",
+      "shopId": "SHOP123",
     };
 
     _nameController.text = dummyProfileData['name']!;
@@ -107,6 +112,7 @@ class _ProfileState extends State<Profile> {
     _phoneController.text = dummyProfileData['phone']!;
     _addressController.text = dummyProfileData['address']!;
     _roleController.text = dummyProfileData['role']!;
+    _shopIdController.text = 'SHOP123'; // Default dummy shop ID
   }
 
   void _saveProfile() async {
@@ -126,6 +132,7 @@ class _ProfileState extends State<Profile> {
           'phone': _phoneController.text,
           'address': _addressController.text,
           'role': _roleController.text,
+          'shopId': _shopIdController.text,
         };
         
         // Update user data in Firestore
@@ -345,6 +352,14 @@ class _ProfileState extends State<Profile> {
                                     controller: _roleController,
                                     icon: Icons.work,
                                     isEditable: false, // Role should not be editable
+                                  ),
+                                  const Divider(),
+                                  _buildProfileField(
+                                    context: context,
+                                    label: 'Shop ID',
+                                    controller: _shopIdController,
+                                    icon: Icons.store,
+                                    isEditable: false, // Shop ID should not be editable after creation
                                   ),
                                 ],
                               ),

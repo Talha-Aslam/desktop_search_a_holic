@@ -20,6 +20,7 @@ class _RegistrationState extends State<Registration> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _shopIdController = TextEditingController(); // Added shop ID controller
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -50,6 +51,7 @@ class _RegistrationState extends State<Registration> {
     _emailController.dispose();
     _confirmPasswordController.dispose();
     _phoneController.dispose();
+    _shopIdController.dispose(); // Dispose shop ID controller
     super.dispose();
   }
 
@@ -83,6 +85,7 @@ class _RegistrationState extends State<Registration> {
         'name': _nameController.text,
         'email': _emailController.text.trim(),
         'phone': _phoneController.text,
+        'shopId': _shopIdController.text, // Store shop ID
         'createdAt': FieldValue.serverTimestamp(),
       });
 
@@ -179,6 +182,7 @@ class _RegistrationState extends State<Registration> {
         _passwordController.clear();
         _confirmPasswordController.clear();
         _phoneController.clear();
+        _shopIdController.clear(); // Clear shop ID field
 
         // Navigate to login page after a short delay
         Future.delayed(const Duration(seconds: 2), () {
@@ -441,6 +445,50 @@ class _RegistrationState extends State<Registration> {
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your phone number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+
+                    // Shop ID field
+                    TextFormField(
+                      controller: _shopIdController,
+                      decoration: InputDecoration(
+                        labelText: 'Shop ID',
+                        labelStyle: const TextStyle(color: Colors.white),
+                        hintText: 'Enter your shop ID',
+                        hintStyle:
+                            TextStyle(color: Colors.white.withOpacity(0.7)),
+                        helperText: 'This unique ID identifies your business',
+                        helperStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
+                        prefixIcon:
+                            const Icon(Icons.store, color: Colors.white),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Colors.white),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide:
+                              const BorderSide(color: Colors.white, width: 2),
+                        ),
+                        errorStyle: const TextStyle(
+                          color: Colors.yellow,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        filled: !themeProvider.isDarkMode,
+                        fillColor: !themeProvider.isDarkMode
+                            ? Colors.black.withOpacity(0.3)
+                            : Colors.transparent,
+                      ),
+                      style: const TextStyle(color: Colors.white),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your shop ID';
                         }
                         return null;
                       },
