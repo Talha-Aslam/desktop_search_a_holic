@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:desktop_search_a_holic/asset_helper.dart';
 
 class Sidebar extends StatefulWidget {
   const Sidebar({super.key});
@@ -16,13 +17,13 @@ class _SidebarState extends State<Sidebar> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
-  
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
   }
-  
+
   Future<void> _loadUserData() async {
     if (_auth.currentUser != null) {
       try {
@@ -30,7 +31,7 @@ class _SidebarState extends State<Sidebar> {
             .collection('users')
             .doc(_auth.currentUser!.uid)
             .get();
-            
+
         if (userDoc.exists) {
           setState(() {
             _userData = userDoc.data() as Map<String, dynamic>?;
@@ -41,12 +42,12 @@ class _SidebarState extends State<Sidebar> {
         print('Error loading user data: $e');
       }
     }
-    
+
     setState(() {
       _isLoading = false;
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -210,7 +211,7 @@ class _SidebarState extends State<Sidebar> {
                     try {
                       await _auth.signOut();
                       Navigator.pushNamedAndRemoveUntil(
-                        context, '/login', (Route<dynamic> route) => false);
+                          context, '/login', (Route<dynamic> route) => false);
                     } catch (e) {
                       print('Error signing out: $e');
                     }
@@ -240,9 +241,10 @@ class _SidebarState extends State<Sidebar> {
                   )
                 : Row(
                     children: [
-                      const CircleAvatar(
+                      AssetHelper.buildProfileAvatar(
                         radius: 16,
-                        backgroundImage: AssetImage('images/profile.jpg'),
+                        assetPath: 'images/profile.jpg',
+                        fallbackIcon: Icons.person,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -250,8 +252,10 @@ class _SidebarState extends State<Sidebar> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _userData != null ? _userData!['name'] ?? 'User' : 
-                              (_auth.currentUser?.displayName ?? 'Guest User'),
+                              _userData != null
+                                  ? _userData!['name'] ?? 'User'
+                                  : (_auth.currentUser?.displayName ??
+                                      'Guest User'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: themeProvider.isDarkMode
@@ -261,8 +265,10 @@ class _SidebarState extends State<Sidebar> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              _userData != null ? _userData!['email'] ?? 'No email' : 
-                              (_auth.currentUser?.email ?? 'Not logged in'),
+                              _userData != null
+                                  ? _userData!['email'] ?? 'No email'
+                                  : (_auth.currentUser?.email ??
+                                      'Not logged in'),
                               style: TextStyle(
                                 fontSize: 12,
                                 color: themeProvider.isDarkMode
@@ -310,14 +316,15 @@ class _SidebarState extends State<Sidebar> {
           fontWeight: FontWeight.w500,
         ),
       ),
-      onTap: onTap ?? () {
-        if (isLogout) {
-          Navigator.pushNamedAndRemoveUntil(
-              context, route, (Route<dynamic> route) => false);
-        } else {
-          Navigator.pushNamed(context, route);
-        }
-      },
+      onTap: onTap ??
+          () {
+            if (isLogout) {
+              Navigator.pushNamedAndRemoveUntil(
+                  context, route, (Route<dynamic> route) => false);
+            } else {
+              Navigator.pushNamed(context, route);
+            }
+          },
       hoverColor: themeProvider.isDarkMode
           ? Colors.grey.shade800
           : Colors.grey.shade200,

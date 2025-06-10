@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/sidebar.dart';
 import 'package:desktop_search_a_holic/firebase_service.dart'; // Add Firebase service import
+import 'package:desktop_search_a_holic/asset_helper.dart'; // Add asset helper import
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -20,7 +21,8 @@ class _ProfileState extends State<Profile> {
   final TextEditingController _shopIdController = TextEditingController();
   bool _isEditing = false;
   bool _isLoading = true; // Add loading state
-  final FirebaseService _firebaseService = FirebaseService(); // Add Firebase service
+  final FirebaseService _firebaseService =
+      FirebaseService(); // Add Firebase service
 
   @override
   void initState() {
@@ -36,17 +38,17 @@ class _ProfileState extends State<Profile> {
     try {
       // Get current user
       final user = _firebaseService.currentUser;
-      
+
       if (user != null) {
         // Load email from current user
         _emailController.text = user.email ?? '';
-        
+
         // Get user data from Firestore
         final userData = await _firebaseService.getUserData(user.uid);
-        
+
         if (userData.exists) {
           final data = userData.data() as Map<String, dynamic>;
-          
+
           setState(() {
             _nameController.text = data['name'] ?? '';
             _phoneController.text = data['phone'] ?? '';
@@ -64,7 +66,7 @@ class _ProfileState extends State<Profile> {
             'role': 'User',
             'shopId': '', // Empty shop ID, user should set this
           });
-          
+
           // Set default values
           _nameController.text = user.displayName ?? 'User';
           _phoneController.text = '';
@@ -80,7 +82,7 @@ class _ProfileState extends State<Profile> {
       print('Error loading user data: $e');
       // Fallback to dummy data on error
       _loadDummyProfileData();
-      
+
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -123,7 +125,7 @@ class _ProfileState extends State<Profile> {
     try {
       // Get current user
       final user = _firebaseService.currentUser;
-      
+
       if (user != null) {
         // Prepare user data
         Map<String, dynamic> userData = {
@@ -134,16 +136,16 @@ class _ProfileState extends State<Profile> {
           'role': _roleController.text,
           'shopId': _shopIdController.text,
         };
-        
+
         // Update user data in Firestore
         await _firebaseService.storeUserData(user.uid, userData);
-        
+
         // Toggle edit mode off
         setState(() {
           _isEditing = false;
           _isLoading = false;
         });
-        
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -158,7 +160,7 @@ class _ProfileState extends State<Profile> {
       setState(() {
         _isLoading = false;
       });
-      
+
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -191,11 +193,13 @@ class _ProfileState extends State<Profile> {
         actions: [
           IconButton(
             icon: Icon(_isEditing ? Icons.close : Icons.edit),
-            onPressed: !_isLoading ? () {
-              setState(() {
-                _isEditing = !_isEditing;
-              });
-            } : null, // Disable when loading
+            onPressed: !_isLoading
+                ? () {
+                    setState(() {
+                      _isEditing = !_isEditing;
+                    });
+                  }
+                : null, // Disable when loading
             tooltip: _isEditing ? 'Cancel' : 'Edit',
           ),
           const SizedBox(width: 8),
@@ -251,10 +255,10 @@ class _ProfileState extends State<Profile> {
                                       color: Colors.white,
                                       width: 4,
                                     ),
-                                  ),
-                                  child: const CircleAvatar(
+                                  ),                                  child: AssetHelper.buildProfileAvatar(
                                     radius: 60,
-                                    backgroundImage: AssetImage('images/profile.jpg'),
+                                    assetPath: 'images/profile.jpg',
+                                    fallbackIcon: Icons.person,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
@@ -343,8 +347,10 @@ class _ProfileState extends State<Profile> {
                                     label: 'Shop Location',
                                     controller: _addressController,
                                     icon: Icons.location_pin,
-                                    isEditable: false, // Location should not be editable after creation
-                                    helperText: 'Permanent address set during registration',
+                                    isEditable:
+                                        false, // Location should not be editable after creation
+                                    helperText:
+                                        'Permanent address set during registration',
                                     trailing: Tooltip(
                                       message: 'Location is permanent',
                                       child: Icon(
@@ -360,7 +366,8 @@ class _ProfileState extends State<Profile> {
                                     label: 'Role',
                                     controller: _roleController,
                                     icon: Icons.work,
-                                    isEditable: false, // Role should not be editable
+                                    isEditable:
+                                        false, // Role should not be editable
                                   ),
                                   const Divider(),
                                   _buildProfileField(
@@ -368,7 +375,8 @@ class _ProfileState extends State<Profile> {
                                     label: 'Shop ID',
                                     controller: _shopIdController,
                                     icon: Icons.store,
-                                    isEditable: false, // Shop ID should not be editable after creation
+                                    isEditable:
+                                        false, // Shop ID should not be editable after creation
                                   ),
                                 ],
                               ),
@@ -384,19 +392,24 @@ class _ProfileState extends State<Profile> {
                               children: [
                                 ElevatedButton.icon(
                                   onPressed: _isLoading ? null : _saveProfile,
-                                  icon: _isLoading 
+                                  icon: _isLoading
                                       ? SizedBox(
                                           width: 20,
                                           height: 20,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    Colors.white),
                                           ),
                                         )
                                       : const Icon(Icons.save),
-                                  label: Text(_isLoading ? 'Saving...' : 'Save Changes'),
+                                  label: Text(_isLoading
+                                      ? 'Saving...'
+                                      : 'Save Changes'),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: themeProvider.gradientColors[0],
+                                    backgroundColor:
+                                        themeProvider.gradientColors[0],
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 24, vertical: 12),
@@ -407,13 +420,15 @@ class _ProfileState extends State<Profile> {
                                 ),
                                 const SizedBox(width: 16),
                                 TextButton.icon(
-                                  onPressed: _isLoading ? null : () {
-                                    // Reset values to original
-                                    _loadUserData(); // Reload user data instead of dummy data
-                                    setState(() {
-                                      _isEditing = false;
-                                    });
-                                  },
+                                  onPressed: _isLoading
+                                      ? null
+                                      : () {
+                                          // Reset values to original
+                                          _loadUserData(); // Reload user data instead of dummy data
+                                          setState(() {
+                                            _isEditing = false;
+                                          });
+                                        },
                                   icon: const Icon(Icons.cancel),
                                   label: const Text('Cancel'),
                                   style: TextButton.styleFrom(
@@ -460,11 +475,13 @@ class _ProfileState extends State<Profile> {
                                   ),
                                   trailing: Icon(
                                     Icons.arrow_forward_ios,
-                                    color: themeProvider.textColor.withOpacity(0.5),
+                                    color: themeProvider.textColor
+                                        .withOpacity(0.5),
                                     size: 16,
                                   ),
                                   onTap: () {
-                                    Navigator.pushNamed(context, '/changePassword');
+                                    Navigator.pushNamed(
+                                        context, '/changePassword');
                                   },
                                 ),
                                 Divider(
@@ -488,17 +505,13 @@ class _ProfileState extends State<Profile> {
                                   ),
                                   trailing: Icon(
                                     Icons.arrow_forward_ios,
-                                    color: themeProvider.textColor.withOpacity(0.5),
+                                    color: themeProvider.textColor
+                                        .withOpacity(0.5),
                                     size: 16,
                                   ),
                                   onTap: () {
-                                    // Show notification settings
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content:
-                                            Text('Notification settings coming soon'),
-                                      ),
-                                    );
+                                    // Navigate to notification settings page
+                                    Navigator.pushNamed(context, '/settings');
                                   },
                                 ),
                                 Divider(
@@ -524,8 +537,10 @@ class _ProfileState extends State<Profile> {
                                   ),
                                   trailing: Switch(
                                     value: themeProvider.isDarkMode,
-                                    activeColor: themeProvider.gradientColors[0],
-                                    onChanged: (_) => themeProvider.toggleTheme(),
+                                    activeColor:
+                                        themeProvider.gradientColors[0],
+                                    onChanged: (_) =>
+                                        themeProvider.toggleTheme(),
                                   ),
                                 ),
                               ],

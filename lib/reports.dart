@@ -4,6 +4,8 @@ import 'package:quickalert/widgets/quickalert_dialog.dart';
 import 'package:desktop_search_a_holic/sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
+import 'package:desktop_search_a_holic/reports_service.dart';
+import 'package:desktop_search_a_holic/export_service.dart';
 import 'package:intl/intl.dart';
 
 class Reports extends StatefulWidget {
@@ -19,16 +21,114 @@ class _ReportsState extends State<Reports> {
   String _selectedType = 'All';
   String _sortBy = 'Date (Latest)';
   bool _isLoading = true;
+  final ReportsService _reportsService = ReportsService();
+  final ExportService _exportService = ExportService();
 
   @override
   void initState() {
     super.initState();
-    _loadDummyReports();
+    _loadReports();
+  }
+
+  Future<void> _loadReports() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      print('=== REPORTS PAGE: Loading reports from ReportsService ===');
+      List<Map<String, dynamic>> loadedReports =
+          await _reportsService.getAllReports();
+
+      print('✅ SUCCESS: Loaded ${loadedReports.length} REAL DATA reports');
+
+      // Display notification about real data
+      if (mounted && loadedReports.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                '✅ Showing ${loadedReports.length} real-time reports generated from your actual data'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+
+      setState(() {
+        reports = loadedReports;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('❌ ERROR loading real reports: $e');
+      setState(() {
+        _isLoading = false;
+      });
+
+      // Check if we have any real data
+      _checkRealDataAvailability();
+
+      // Load dummy data as fallback
+      _loadDummyReports();
+    }
+  }
+
+  Future<void> _checkRealDataAvailability() async {
+    try {
+      print('=== CHECKING REAL DATA AVAILABILITY ===');
+
+      // Check if user has any sales data
+      final salesReport = await _reportsService.generateSalesReport();
+      print('📊 Sales Report Data: ${salesReport['data']}');
+
+      // Check if user has any product data
+      final inventoryReport = await _reportsService.generateInventoryReport();
+      print('📦 Inventory Report Data: ${inventoryReport['data']}');
+
+      int totalSales = salesReport['data']['totalOrders'] ?? 0;
+      int totalProducts = inventoryReport['data']['totalItems'] ?? 0;
+      double salesAmount = salesReport['data']['totalSales'] ?? 0.0;
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('⚠️ Showing sample data as fallback.\n'
+                'Real data available: ${totalSales} sales (\$${salesAmount.toStringAsFixed(2)}), ${totalProducts} products'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      print('❌ Error checking real data: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                '⚠️ No real data available. Showing sample reports for demonstration.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   void _loadDummyReports() {
+    print('=== LOADING DUMMY/SAMPLE DATA AS FALLBACK ===');
+
     // Simulate loading time
     Future.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                '📋 Loaded sample reports for demonstration. Create sales in POS to see real data.'),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+
       // Dummy data for reports with more comprehensive information
       var dummyReports = [
         {
@@ -412,6 +512,91 @@ class _ReportsState extends State<Reports> {
     }
   }
 
+  Future<void> _showExportDialog() async {
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: themeProvider.cardBackgroundColor,
+        title: Text(
+          'Export Reports',
+          style: TextStyle(color: themeProvider.textColor),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Choose export format:',
+              style: TextStyle(color: themeProvider.textColor),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    try {
+                      await _exportService.exportBusinessReportToCSV();
+                    } catch (e) {
+                      if (mounted) {
+                        QuickAlert.show(
+                          context: context,
+                          type: QuickAlertType.error,
+                          title: 'Export Failed',
+                          text: 'Export failed: $e',
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.table_chart),
+                  label: const Text('CSV'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeProvider.gradientColors[0],
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    try {
+                      await _exportService.createDataBackup();
+                    } catch (e) {
+                      if (mounted) {
+                        QuickAlert.show(
+                          context: context,
+                          type: QuickAlertType.error,
+                          title: 'Backup Failed',
+                          text: 'Backup failed: $e',
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.backup),
+                  label: const Text('Backup'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: themeProvider.textColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -434,14 +619,14 @@ class _ReportsState extends State<Reports> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.file_download),
+            tooltip: 'Export Reports',
+            onPressed: () => _showExportDialog(),
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh Reports',
-            onPressed: () {
-              setState(() {
-                _isLoading = true;
-              });
-              _loadDummyReports();
-            },
+            onPressed: _loadReports,
           ),
           const SizedBox(width: 8),
         ],
@@ -456,6 +641,72 @@ class _ReportsState extends State<Reports> {
               ),
               child: Column(
                 children: [
+                  // Data Source Indicator
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 8.0),
+                    decoration: BoxDecoration(
+                      color: reports.any((r) =>
+                              r['id']?.toString().startsWith('R0') == true)
+                          ? Colors.orange.withOpacity(0.1)
+                          : Colors.green.withOpacity(0.1),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: reports.any((r) =>
+                                  r['id']?.toString().startsWith('R0') == true)
+                              ? Colors.orange.withOpacity(0.3)
+                              : Colors.green.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          reports.any((r) =>
+                                  r['id']?.toString().startsWith('R0') == true)
+                              ? Icons.science
+                              : Icons.verified,
+                          color: reports.any((r) =>
+                                  r['id']?.toString().startsWith('R0') == true)
+                              ? Colors.orange
+                              : Colors.green,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            reports.any((r) =>
+                                    r['id']?.toString().startsWith('R0') ==
+                                    true)
+                                ? '📋 Showing sample reports for demonstration. Create sales in POS to see real data.'
+                                : '✅ Showing real-time reports generated from your actual business data.',
+                            style: TextStyle(
+                              color: themeProvider.textColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (reports.any((r) =>
+                            r['id']?.toString().startsWith('R0') == true))
+                          TextButton.icon(
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/pos'),
+                            icon: const Icon(Icons.point_of_sale, size: 16),
+                            label: const Text('Go to POS',
+                                style: TextStyle(fontSize: 12)),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.orange,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+
                   // Filter bar
                   Container(
                     padding: const EdgeInsets.all(16.0),

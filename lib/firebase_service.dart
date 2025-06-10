@@ -106,13 +106,19 @@ class FirebaseService {
       // Add user email to product data
       if (_auth.currentUser != null) {
         productData['userEmail'] = _auth.currentUser!.email;
-        
+
         // Get user data to retrieve the shop ID
-        DocumentSnapshot userData = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
+        DocumentSnapshot userData = await _firestore
+            .collection('users')
+            .doc(_auth.currentUser!.uid)
+            .get();
         if (userData.exists) {
-          Map<String, dynamic> userDataMap = userData.data() as Map<String, dynamic>;
+          Map<String, dynamic> userDataMap =
+              userData.data() as Map<String, dynamic>;
           // Add shop ID to product data if available
-          if (userDataMap.containsKey('shopId') && userDataMap['shopId'] != null && userDataMap['shopId'] != '') {
+          if (userDataMap.containsKey('shopId') &&
+              userDataMap['shopId'] != null &&
+              userDataMap['shopId'] != '') {
             productData['shopId'] = userDataMap['shopId'];
           }
         }
@@ -153,7 +159,7 @@ class FirebaseService {
       rethrow;
     }
   }
-  
+
   // Get all products from Firestore by shop ID
   Future<List<Map<String, dynamic>>> getProductsByShopId(String shopId) async {
     try {
@@ -204,7 +210,7 @@ class FirebaseService {
       return products;
     });
   }
-  
+
   // Get products stream for real-time updates by shop ID
   Stream<List<Map<String, dynamic>>> getProductsStreamByShopId(String shopId) {
     // Check if user is logged in
@@ -254,17 +260,24 @@ class FirebaseService {
       // Add updated timestamp and ensure userEmail is preserved
       productData['updatedAt'] = DateTime.now().toIso8601String();
       productData['userEmail'] = _auth.currentUser!.email;
-      
+
       // Preserve the shop ID if it exists in the original document
-      if (existingData.containsKey('shopId') && existingData['shopId'] != null) {
+      if (existingData.containsKey('shopId') &&
+          existingData['shopId'] != null) {
         productData['shopId'] = existingData['shopId'];
       } else {
         // Get shop ID from user profile if not already in the product
         try {
-          DocumentSnapshot userData = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
+          DocumentSnapshot userData = await _firestore
+              .collection('users')
+              .doc(_auth.currentUser!.uid)
+              .get();
           if (userData.exists) {
-            Map<String, dynamic> userDataMap = userData.data() as Map<String, dynamic>;
-            if (userDataMap.containsKey('shopId') && userDataMap['shopId'] != null && userDataMap['shopId'] != '') {
+            Map<String, dynamic> userDataMap =
+                userData.data() as Map<String, dynamic>;
+            if (userDataMap.containsKey('shopId') &&
+                userDataMap['shopId'] != null &&
+                userDataMap['shopId'] != '') {
               productData['shopId'] = userDataMap['shopId'];
             }
           }
@@ -315,30 +328,45 @@ class FirebaseService {
     try {
       // Check if user is logged in
       if (_auth.currentUser == null || _auth.currentUser!.email == null) {
+        print('Firebase getProduct: User not logged in');
         throw Exception('User not logged in');
       }
 
+      print(
+          'Firebase getProduct: Fetching product with ID: $productId for user: ${_auth.currentUser!.email}');
+
       DocumentSnapshot doc =
           await _firestore.collection('products').doc(productId).get();
+
+      print('Firebase getProduct: Document exists: ${doc.exists}');
+
       if (doc.exists) {
         Map<String, dynamic> productData =
             Map<String, dynamic>.from(doc.data() as Map);
 
+        print(
+            'Firebase getProduct: Product userEmail: ${productData['userEmail']}, Current user: ${_auth.currentUser!.email}');
+
         // Check if the product belongs to the current user
         if (productData['userEmail'] == _auth.currentUser!.email) {
           productData['id'] = doc.id;
+          print('Firebase getProduct: Product access granted, returning data');
           return productData;
         } else {
           // Product doesn't belong to current user
+          print(
+              'Firebase getProduct: Access denied - product belongs to different user');
           throw Exception('Product not found or access denied');
         }
       }
+      print('Firebase getProduct: Document does not exist');
       return null;
     } catch (e) {
+      print('Firebase getProduct: Error - $e');
       rethrow;
     }
   }
-  
+
   // Get user's shop ID
   Future<String?> getUserShopId() async {
     try {
@@ -346,49 +374,53 @@ class FirebaseService {
       if (_auth.currentUser == null) {
         throw Exception('User not logged in');
       }
-      
-      DocumentSnapshot doc = 
-          await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
-          
+
+      DocumentSnapshot doc = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .get();
+
       if (doc.exists) {
-        Map<String, dynamic> userData = 
+        Map<String, dynamic> userData =
             Map<String, dynamic>.from(doc.data() as Map);
-            
+
         return userData['shopId'] as String?;
       }
-      
+
       return null;
     } catch (e) {
       rethrow;
     }
   }
-  
+
   // Create or update shop information
-  Future<void> createOrUpdateShop(String shopId, Map<String, dynamic> shopData) async {
+  Future<void> createOrUpdateShop(
+      String shopId, Map<String, dynamic> shopData) async {
     try {
       // Check if user is logged in
       if (_auth.currentUser == null) {
         throw Exception('User not logged in');
       }
-      
+
       // Add owner email to shop data
       shopData['ownerEmail'] = _auth.currentUser!.email;
       shopData['updatedAt'] = DateTime.now().toIso8601String();
-      
+
       if (!shopData.containsKey('createdAt')) {
         shopData['createdAt'] = DateTime.now().toIso8601String();
       }
-      
+
       // Create or update shop document
-      await _firestore.collection('shops').doc(shopId).set(
-        shopData, 
-        SetOptions(merge: true)
-      );
-      
+      await _firestore
+          .collection('shops')
+          .doc(shopId)
+          .set(shopData, SetOptions(merge: true));
+
       // Update user's shop ID
-      await _firestore.collection('users').doc(_auth.currentUser!.uid).update({
-        'shopId': shopId
-      });
+      await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .update({'shopId': shopId});
     } catch (e) {
       rethrow;
     }

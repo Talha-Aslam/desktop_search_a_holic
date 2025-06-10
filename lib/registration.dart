@@ -89,13 +89,6 @@ class _RegistrationState extends State<Registration> {
         SnackBar(
           content: Text(
               'Location services are disabled. Please enable them in your device settings.'),
-<<<<<<< HEAD
-=======
-          action: SnackBarAction(
-            label: 'Enter manually',
-            onPressed: _showManualAddressInputDialog,
-          ),
->>>>>>> aea9a6895c8c1e36610e88436c805e7acfb1a811
           duration: Duration(seconds: 4),
         ),
       );
@@ -131,7 +124,6 @@ class _RegistrationState extends State<Registration> {
 
       // Get current position
       final position = await Geolocator.getCurrentPosition(
-<<<<<<< HEAD
           desiredAccuracy: LocationAccuracy.high);
 
       // Convert position to address
@@ -157,14 +149,6 @@ class _RegistrationState extends State<Registration> {
               cleanedAddress; // Update the address controller
         });
       }
-=======
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 10), // Add timeout
-      );
-
-      // Convert position to address (may not work on web)
-      await _convertPositionToAddress(position);
->>>>>>> aea9a6895c8c1e36610e88436c805e7acfb1a811
     } catch (e) {
       print('Error getting location: $e');
       // Handle geocoding errors
@@ -180,15 +164,7 @@ class _RegistrationState extends State<Registration> {
   void _handleGeocodingError(dynamic error) {
     String errorMessage;
 
-<<<<<<< HEAD
     if (error is PermissionDeniedException) {
-=======
-    if (kIsWeb) {
-      // Web-specific error handling
-      errorMessage =
-          'Location access may be limited in web browsers. Please enter your address manually.';
-    } else if (error is PermissionDeniedException) {
->>>>>>> aea9a6895c8c1e36610e88436c805e7acfb1a811
       errorMessage = 'Location permission denied';
     } else if (error is LocationServiceDisabledException) {
       errorMessage = 'Location services are disabled';
@@ -1148,7 +1124,6 @@ class _RegistrationState extends State<Registration> {
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.underline,
                             ),
                           ),
                         ),

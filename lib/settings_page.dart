@@ -795,6 +795,31 @@ class _SettingsPageState extends State<SettingsPage> {
                               label: const Text('Export Data'),
                             ),
                           ),
+
+                          // View Backup History Button
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0, vertical: 8.0),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/backup-history');
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: themeProvider.gradientColors[0]
+                                    .withOpacity(0.8),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                              ),
+                              icon: const Icon(Icons.history),
+                              label: const Text('View Backup History'),
+                            ),
+                          ),
                         ],
                       ),
                     ),
