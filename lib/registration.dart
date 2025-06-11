@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -105,15 +106,27 @@ class _RegistrationState extends State<Registration> {
     });
 
     try {
-      // Check permission first
-      final permissionStatus = await Permission.location.status;
-      if (!permissionStatus.isGranted) {
-        final result = await Permission.location.request();
-        if (result != PermissionStatus.granted) {
-          // Show dialog to manually enter address if permission denied
-          _showManualAddressInputDialog();
-          return;
+      // Check if running on web - different handling required
+      if (kIsWeb) {
+        await _handleWebLocation();
+        return;
+      }
+
+      // Check permission first (for mobile and desktop platforms)
+      try {
+        final permissionStatus = await Permission.location.status;
+        if (!permissionStatus.isGranted) {
+          final result = await Permission.location.request();
+          if (result != PermissionStatus.granted) {
+            // Show dialog to manually enter address if permission denied
+            _showManualAddressInputDialog();
+            return;
+          }
         }
+      } catch (e) {
+        // On Windows, location permission might not be available through permission_handler
+        // Continue with location request and handle errors gracefully
+        print('Permission handling not supported on this platform: $e');
       }
 
       // Check if location services are enabled
@@ -124,11 +137,59 @@ class _RegistrationState extends State<Registration> {
 
       // Get current position
       final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 10), // Add timeout
+      );
 
       // Convert position to address
-      final placemarks =
-          await placemarkFromCoordinates(position.latitude, position.longitude);
+      await _convertPositionToAddress(position);
+    } catch (e) {
+      print('Error getting location: $e');
+      // Handle geocoding errors
+      _handleGeocodingError(e);
+    } finally {
+      setState(() {
+        _isLocationLoading = false;
+      });
+    }
+  }
+
+  // Handle web-specific location requests
+  Future<void> _handleWebLocation() async {
+    try {
+      // Check if geolocation is available in browser
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _showManualAddressInputDialog();
+          return;
+        }
+      }
+
+      // Try to get position on web
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 10),
+      );
+
+      // For web, we'll try geocoding but gracefully handle failures
+      await _convertPositionToAddress(position);
+    } catch (e) {
+      print('Web location error: $e');
+      // Fallback to manual address input for web
+      _showManualAddressInputDialog();
+    }
+  }
+
+  // Convert position to address (separate method for better error handling)
+  Future<void> _convertPositionToAddress(Position position) async {
+    try {
+      // Convert position to address (may not work on web)
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
 
       if (placemarks.isNotEmpty) {
         final placemark = placemarks[0];
@@ -141,22 +202,64 @@ class _RegistrationState extends State<Registration> {
 
         // Clean up the address for better readability
         final cleanedAddress = _cleanUpAddress(address);
-
         setState(() {
           _currentPosition = position;
           _currentAddress = cleanedAddress;
-          _addressController.text =
-              cleanedAddress; // Update the address controller
+          _addressController.text = cleanedAddress;
         });
+
+        // Show success message for full address
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Address successfully retrieved!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        // If no placemark found, use coordinates but don't show error
+        setState(() {
+          _currentPosition = position;
+          _currentAddress =
+              'Location: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+          _addressController.text = _currentAddress;
+        });
+
+        // Show informational message only
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Location coordinates set. You may add a descriptive address if needed.'),
+            action: SnackBarAction(
+              label: 'Add Address',
+              onPressed: _showManualAddressInputDialog,
+            ),
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
     } catch (e) {
-      print('Error getting location: $e');
-      // Handle geocoding errors
-      _handleGeocodingError(e);
-    } finally {
+      print('Geocoding error: $e');
+      // If geocoding fails, just use coordinates without showing error
       setState(() {
-        _isLocationLoading = false;
+        _currentPosition = position;
+        _currentAddress =
+            'Location: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+        _addressController.text = _currentAddress;
       });
+
+      // Only show gentle suggestion, not an error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Location set with coordinates. You may add a descriptive address if needed.'),
+          action: SnackBarAction(
+            label: 'Add Address',
+            onPressed: _showManualAddressInputDialog,
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 
@@ -168,8 +271,18 @@ class _RegistrationState extends State<Registration> {
       errorMessage = 'Location permission denied';
     } else if (error is LocationServiceDisabledException) {
       errorMessage = 'Location services are disabled';
+    } else if (error.toString().contains('null')) {
+      errorMessage = kIsWeb
+          ? 'Location services may be limited in web browsers. Please enter your address manually.'
+          : 'Location service unavailable. Please enter your address manually.';
+    } else if (error.toString().contains('PlatformException')) {
+      // Handle Windows-specific platform exceptions
+      errorMessage =
+          'Location service not available on this device. Please enter your address manually.';
     } else {
-      errorMessage = 'Failed to get location: $error';
+      errorMessage = kIsWeb
+          ? 'Location services are not fully supported in web browsers. Please enter your address manually.'
+          : 'Failed to get location: Please enter your address manually.';
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -207,7 +320,9 @@ class _RegistrationState extends State<Registration> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Please enter your shop address manually.',
+              kIsWeb
+                  ? 'Location services may be limited in web browsers. Please enter your shop address manually.'
+                  : 'Please enter your shop address manually.',
               style: TextStyle(fontSize: 14),
             ),
             SizedBox(height: 8),
