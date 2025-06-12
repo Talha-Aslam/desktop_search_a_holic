@@ -54,10 +54,24 @@ class ActivityService {
       QuerySnapshot recentProducts = await _firestore
           .collection('products')
           .where('userEmail', isEqualTo: _auth.currentUser!.email)
-          .get();
-
-      // Convert to list and sort by createdAt
+          .get(); // Convert to list and sort by createdAt
       List<QueryDocumentSnapshot> productDocs = recentProducts.docs;
+
+      // Filter out dummy/test products
+      productDocs = productDocs.where((doc) {
+        Map<String, dynamic> product = doc.data() as Map<String, dynamic>;
+        String? productId = product['id']?.toString();
+        String? productName = product['name']?.toString();
+
+        // Skip dummy products
+        if (productId?.startsWith('dummy_') == true) return false;
+
+        // Skip test products (optional - you can remove this if you want test data to show)
+        if (productName?.toLowerCase().contains('test') == true) return false;
+
+        return true;
+      }).toList();
+
       productDocs.sort((a, b) {
         Map<String, dynamic> dataA = a.data() as Map<String, dynamic>;
         Map<String, dynamic> dataB = b.data() as Map<String, dynamic>;
@@ -89,11 +103,23 @@ class ActivityService {
         }
 
         return dateB.compareTo(dateA); // Most recent first
-      });
-
-      // Take only the first 2 (most recent)
+      }); // Take only the first 2 (most recent)
       List<QueryDocumentSnapshot> recentProductDocs =
           productDocs.take(2).toList();
+
+      print(
+          '🔍 ACTIVITY DEBUG: Found ${recentProducts.docs.length} total products');
+      print(
+          '🔍 ACTIVITY DEBUG: After filtering: ${productDocs.length} products');
+      print(
+          '🔍 ACTIVITY DEBUG: Showing top ${recentProductDocs.length} in activity feed');
+
+      for (int i = 0; i < recentProductDocs.length; i++) {
+        var doc = recentProductDocs[i];
+        Map<String, dynamic> product = doc.data() as Map<String, dynamic>;
+        print('🔍 ACTIVITY DEBUG: Product ${i + 1}: ${product['name']}');
+      }
+
       for (var doc in recentProductDocs) {
         Map<String, dynamic> product = doc.data() as Map<String, dynamic>;
         DateTime dateTime;
