@@ -12,17 +12,31 @@ class ActivityService {
         throw Exception('User not logged in');
       }
 
-      List<Map<String, dynamic>> activities = [];
-
-      // Get recent sales (last 5)
+      List<Map<String, dynamic>> activities = []; // Get recent sales (last 5)
       QuerySnapshot recentSales = await _firestore
           .collection('sales')
           .where('userEmail', isEqualTo: _auth.currentUser!.email)
-          .orderBy('createdAt', descending: true)
-          .limit(3)
           .get();
 
-      for (var doc in recentSales.docs) {
+      // Convert to list and sort by timestamp
+      List<QueryDocumentSnapshot> salesDocs = recentSales.docs;
+      salesDocs.sort((a, b) {
+        Map<String, dynamic> dataA = a.data() as Map<String, dynamic>;
+        Map<String, dynamic> dataB = b.data() as Map<String, dynamic>;
+
+        Timestamp? timestampA = dataA['createdAt'] as Timestamp?;
+        Timestamp? timestampB = dataB['createdAt'] as Timestamp?;
+
+        DateTime dateA = timestampA?.toDate() ?? DateTime.now();
+        DateTime dateB = timestampB?.toDate() ?? DateTime.now();
+
+        return dateB.compareTo(dateA); // Most recent first
+      });
+
+      // Take only the first 3 (most recent)
+      List<QueryDocumentSnapshot> recentSalesDocs = salesDocs.take(3).toList();
+
+      for (var doc in recentSalesDocs) {
         Map<String, dynamic> sale = doc.data() as Map<String, dynamic>;
         Timestamp? timestamp = sale['createdAt'] as Timestamp?;
         DateTime dateTime = timestamp?.toDate() ?? DateTime.now();
@@ -36,20 +50,65 @@ class ActivityService {
           'timestamp': dateTime,
           'color': 'orange',
         });
-      }
-
-      // Get recent product additions (last 3)
+      } // Get recent product additions (last 3)
       QuerySnapshot recentProducts = await _firestore
           .collection('products')
           .where('userEmail', isEqualTo: _auth.currentUser!.email)
-          .orderBy('createdAt', descending: true)
-          .limit(2)
           .get();
 
-      for (var doc in recentProducts.docs) {
+      // Convert to list and sort by createdAt
+      List<QueryDocumentSnapshot> productDocs = recentProducts.docs;
+      productDocs.sort((a, b) {
+        Map<String, dynamic> dataA = a.data() as Map<String, dynamic>;
+        Map<String, dynamic> dataB = b.data() as Map<String, dynamic>;
+
+        // Handle different date formats in products
+        DateTime dateA;
+        DateTime dateB;
+
+        try {
+          if (dataA['createdAt'] is Timestamp) {
+            dateA = (dataA['createdAt'] as Timestamp).toDate();
+          } else {
+            dateA = DateTime.parse(
+                dataA['createdAt'] ?? DateTime.now().toIso8601String());
+          }
+        } catch (e) {
+          dateA = DateTime.now();
+        }
+
+        try {
+          if (dataB['createdAt'] is Timestamp) {
+            dateB = (dataB['createdAt'] as Timestamp).toDate();
+          } else {
+            dateB = DateTime.parse(
+                dataB['createdAt'] ?? DateTime.now().toIso8601String());
+          }
+        } catch (e) {
+          dateB = DateTime.now();
+        }
+
+        return dateB.compareTo(dateA); // Most recent first
+      });
+
+      // Take only the first 2 (most recent)
+      List<QueryDocumentSnapshot> recentProductDocs =
+          productDocs.take(2).toList();
+      for (var doc in recentProductDocs) {
         Map<String, dynamic> product = doc.data() as Map<String, dynamic>;
-        DateTime dateTime = DateTime.parse(
-            product['createdAt'] ?? DateTime.now().toIso8601String());
+        DateTime dateTime;
+
+        // Handle different date formats in products
+        try {
+          if (product['createdAt'] is Timestamp) {
+            dateTime = (product['createdAt'] as Timestamp).toDate();
+          } else {
+            dateTime = DateTime.parse(
+                product['createdAt'] ?? DateTime.now().toIso8601String());
+          }
+        } catch (e) {
+          dateTime = DateTime.now();
+        }
 
         activities.add({
           'type': 'product',

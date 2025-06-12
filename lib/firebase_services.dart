@@ -1,10 +1,10 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirebaseServices {
   // Authentication functions
-  static Future<UserCredential> signInWithEmailAndPassword(String email, String password) async {
+  static Future<UserCredential> signInWithEmailAndPassword(
+      String email, String password) async {
     try {
       return await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email.trim(),
@@ -14,8 +14,9 @@ class FirebaseServices {
       rethrow;
     }
   }
-  
-  static Future<UserCredential> createUserWithEmailAndPassword(String email, String password) async {
+
+  static Future<UserCredential> createUserWithEmailAndPassword(
+      String email, String password) async {
     try {
       return await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email.trim(),
@@ -25,40 +26,57 @@ class FirebaseServices {
       rethrow;
     }
   }
-  
+
   static Future<void> signOut() async {
     await FirebaseAuth.instance.signOut();
   }
-  
+
   static User? getCurrentUser() {
     return FirebaseAuth.instance.currentUser;
   }
-  
+
   // Firestore functions
-  static Future<void> addDocument(String collection, Map<String, dynamic> data) async {
+  static Future<void> addDocument(
+      String collection, Map<String, dynamic> data) async {
     await FirebaseFirestore.instance.collection(collection).add(data);
   }
-  
-  static Future<void> setDocument(String collection, String documentId, Map<String, dynamic> data) async {
-    await FirebaseFirestore.instance.collection(collection).doc(documentId).set(data);
+
+  static Future<void> setDocument(
+      String collection, String documentId, Map<String, dynamic> data) async {
+    await FirebaseFirestore.instance
+        .collection(collection)
+        .doc(documentId)
+        .set(data);
   }
-  
-  static Future<DocumentSnapshot> getDocument(String collection, String documentId) async {
-    return await FirebaseFirestore.instance.collection(collection).doc(documentId).get();
+
+  static Future<DocumentSnapshot> getDocument(
+      String collection, String documentId) async {
+    return await FirebaseFirestore.instance
+        .collection(collection)
+        .doc(documentId)
+        .get();
   }
-  
+
   static Future<QuerySnapshot> getCollection(String collection) async {
     return await FirebaseFirestore.instance.collection(collection).get();
   }
-  
-  static Future<void> updateDocument(String collection, String documentId, Map<String, dynamic> data) async {
-    await FirebaseFirestore.instance.collection(collection).doc(documentId).update(data);
+
+  static Future<void> updateDocument(
+      String collection, String documentId, Map<String, dynamic> data) async {
+    await FirebaseFirestore.instance
+        .collection(collection)
+        .doc(documentId)
+        .update(data);
   }
-  
-  static Future<void> deleteDocument(String collection, String documentId) async {
-    await FirebaseFirestore.instance.collection(collection).doc(documentId).delete();
+
+  static Future<void> deleteDocument(
+      String collection, String documentId) async {
+    await FirebaseFirestore.instance
+        .collection(collection)
+        .doc(documentId)
+        .delete();
   }
-  
+
   // Password reset
   static Future<void> sendPasswordResetEmail(String email) async {
     await FirebaseAuth.instance.sendPasswordResetEmail(email: email.trim());
@@ -74,7 +92,7 @@ class FirebaseServices {
         productData['createdAt'] = FieldValue.serverTimestamp();
         productData['updatedAt'] = FieldValue.serverTimestamp();
       }
-      
+
       DocumentReference docRef = await FirebaseFirestore.instance
           .collection('products')
           .add(productData);
@@ -91,7 +109,6 @@ class FirebaseServices {
         return await FirebaseFirestore.instance
             .collection('products')
             .where('userId', isEqualTo: currentUser.uid)
-            .orderBy('createdAt', descending: true)
             .get();
       } else {
         throw Exception('No user is currently signed in');
@@ -101,7 +118,8 @@ class FirebaseServices {
     }
   }
 
-  static Future<void> updateProduct(String productId, Map<String, dynamic> productData) async {
+  static Future<void> updateProduct(
+      String productId, Map<String, dynamic> productData) async {
     try {
       productData['updatedAt'] = FieldValue.serverTimestamp();
       await FirebaseFirestore.instance
