@@ -29,9 +29,16 @@ class _ProductState extends State<Product> {
       setState(() {
         _isLoading = true;
       });
-      
-      List<Map<String, dynamic>> loadedProducts = await _firebaseService.getProducts();
-      
+
+      List<Map<String, dynamic>> loadedProducts =
+          await _firebaseService.getProducts();
+
+      // Debug logging
+      print('Products loaded: ${loadedProducts.length}');
+      for (var product in loadedProducts) {
+        print('Product: ${product['name']}, ID: ${product['id']}');
+      }
+
       setState(() {
         products = loadedProducts;
         filteredProducts = loadedProducts;
@@ -41,7 +48,7 @@ class _ProductState extends State<Product> {
       setState(() {
         _isLoading = false;
       });
-      
+
       // Show error to user
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -55,7 +62,7 @@ class _ProductState extends State<Product> {
             ),
           ),
         );
-        
+
         // Load dummy data as fallback
         _loadDummyProducts();
       }
@@ -65,10 +72,11 @@ class _ProductState extends State<Product> {
   void _loadDummyProducts() {
     // Get current user email for dummy data
     String? userEmail = _firebaseService.currentUser?.email;
-    
+
     // Dummy data for products with more details (fallback data)
     var dummyProducts = [
       {
+        "id": "dummy_1", // Add dummy IDs for fallback data
         "name": "Paracetamol 500mg",
         "price": 100,
         "quantity": 10,
@@ -77,6 +85,7 @@ class _ProductState extends State<Product> {
         "userEmail": userEmail,
       },
       {
+        "id": "dummy_2",
         "name": "Aspirin 300mg",
         "price": 200,
         "quantity": 5,
@@ -85,6 +94,7 @@ class _ProductState extends State<Product> {
         "userEmail": userEmail,
       },
       {
+        "id": "dummy_3",
         "name": "Vitamins C",
         "price": 150,
         "quantity": 20,
@@ -93,6 +103,7 @@ class _ProductState extends State<Product> {
         "userEmail": userEmail,
       },
       {
+        "id": "dummy_4",
         "name": "Cough Syrup",
         "price": 85,
         "quantity": 15,
@@ -101,6 +112,7 @@ class _ProductState extends State<Product> {
         "userEmail": userEmail,
       },
       {
+        "id": "dummy_5",
         "name": "Bandages",
         "price": 50,
         "quantity": 30,
@@ -109,6 +121,7 @@ class _ProductState extends State<Product> {
         "userEmail": userEmail,
       },
       {
+        "id": "dummy_6",
         "name": "Hand Sanitizer",
         "price": 65,
         "quantity": 25,
@@ -274,7 +287,8 @@ class _ProductState extends State<Product> {
                                     Icon(
                                       Icons.inventory_2_outlined,
                                       size: 64,
-                                      color: themeProvider.textColor.withOpacity(0.5),
+                                      color: themeProvider.textColor
+                                          .withOpacity(0.5),
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
@@ -289,7 +303,8 @@ class _ProductState extends State<Product> {
                                     ElevatedButton(
                                       onPressed: _loadProductsFromFirestore,
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: themeProvider.gradientColors[0],
+                                        backgroundColor:
+                                            themeProvider.gradientColors[0],
                                       ),
                                       child: const Text(
                                         'Refresh',
@@ -297,7 +312,8 @@ class _ProductState extends State<Product> {
                                       ),
                                     ),
                                   ],
-                                ),                              )
+                                ),
+                              )
                             : RefreshIndicator(
                                 onRefresh: _refreshProducts,
                                 color: themeProvider.gradientColors[0],
@@ -307,106 +323,117 @@ class _ProductState extends State<Product> {
                                   itemBuilder: (context, index) {
                                     final product = filteredProducts[index];
                                     return Card(
-                                margin: const EdgeInsets.only(bottom: 16.0),
-                                color: themeProvider.cardBackgroundColor,
-                                elevation: 3.0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                      margin:
+                                          const EdgeInsets.only(bottom: 16.0),
+                                      color: themeProvider.cardBackgroundColor,
+                                      elevation: 3.0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    product['name'],
+                                                    style: TextStyle(
+                                                      color: themeProvider
+                                                          .textColor,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontSize: 18,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '\$${product['price']}',
+                                                  style: TextStyle(
+                                                    color: themeProvider
+                                                        .gradientColors[0],
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                _buildInfoChip(
+                                                  context,
+                                                  'Quantity: ${product['quantity']}',
+                                                  Icons.inventory_2,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                _buildInfoChip(
+                                                  context,
+                                                  product['category'],
+                                                  Icons.category,
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  'Expiry: ${product['expiry']}',
+                                                  style: TextStyle(
+                                                    color: themeProvider
+                                                        .textColor
+                                                        .withOpacity(0.7),
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                // Action buttons
+                                                IconButton(
+                                                  icon: Icon(
+                                                    Icons.edit,
+                                                    color:
+                                                        themeProvider.iconColor,
+                                                  ),
+                                                  onPressed: () async {
+                                                    await Navigator.pushNamed(
+                                                      context,
+                                                      '/editProduct',
+                                                      arguments: {
+                                                        'productId':
+                                                            product['id']
+                                                      },
+                                                    );
+                                                    // Refresh the product list when returning
+                                                    _refreshProducts();
+                                                  },
+                                                  tooltip: 'Edit',
+                                                ),
+                                                IconButton(
+                                                  icon: const Icon(
+                                                    Icons.delete,
+                                                    color: Colors.red,
+                                                  ),
+                                                  onPressed: () {
+                                                    _showDeleteConfirmation(
+                                                        context, index);
+                                                  },
+                                                  tooltip: 'Delete',
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              product['name'],
-                                              style: TextStyle(
-                                                color: themeProvider.textColor,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 18,
-                                              ),
-                                            ),
-                                          ),
-                                          Text(
-                                            '\$${product['price']}',
-                                            style: TextStyle(
-                                              color: themeProvider
-                                                  .gradientColors[0],
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 18,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          _buildInfoChip(
-                                            context,
-                                            'Quantity: ${product['quantity']}',
-                                            Icons.inventory_2,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          _buildInfoChip(
-                                            context,
-                                            product['category'],
-                                            Icons.category,
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          Text(
-                                            'Expiry: ${product['expiry']}',
-                                            style: TextStyle(
-                                              color: themeProvider.textColor
-                                                  .withOpacity(0.7),
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                          const Spacer(),
-                                          // Action buttons
-                                          IconButton(
-                                            icon: Icon(
-                                              Icons.edit,
-                                              color: themeProvider.iconColor,
-                                            ),
-                                            onPressed: () {
-                                              Navigator.pushNamed(
-                                                context,
-                                                '/editProduct',
-                                                arguments: {'productId': index},
-                                              );
-                                            },
-                                            tooltip: 'Edit',
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.delete,
-                                              color: Colors.red,
-                                            ),
-                                            onPressed: () {
-                                              _showDeleteConfirmation(
-                                                  context, index);
-                                            },
-                                            tooltip: 'Delete',
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
+                              ),
                   ),
                 ],
               ),
@@ -561,7 +588,7 @@ class _ProductState extends State<Product> {
   void _showDeleteConfirmation(BuildContext context, int index) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final product = filteredProducts[index];
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -588,19 +615,19 @@ class _ProductState extends State<Product> {
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop();
-                
+
                 try {
                   // Delete from Firestore if product has an ID
                   if (product['id'] != null) {
                     await _firebaseService.deleteProduct(product['id']);
                   }
-                  
+
                   // Update local state
                   setState(() {
                     products.removeWhere((p) => p['name'] == product['name']);
                     filteredProducts = List.from(products);
                   });
-                  
+
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -613,7 +640,8 @@ class _ProductState extends State<Product> {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Failed to delete product: ${e.toString()}'),
+                        content:
+                            Text('Failed to delete product: ${e.toString()}'),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -623,7 +651,8 @@ class _ProductState extends State<Product> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
               ),
-              child: const Text('Delete', style: TextStyle(color: Colors.white)),
+              child:
+                  const Text('Delete', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

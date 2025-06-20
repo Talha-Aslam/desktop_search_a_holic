@@ -3,6 +3,7 @@ import 'package:desktop_search_a_holic/sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/sales_service.dart';
+import 'package:desktop_search_a_holic/activity_service.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -13,6 +14,7 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   final SalesService _salesService = SalesService();
+  final ActivityService _activityService = ActivityService();
   Map<String, dynamic> _salesStats = {
     'totalSalesAmount': 0.0,
     'totalOrders': 0,
@@ -20,28 +22,33 @@ class _DashboardState extends State<Dashboard> {
     'topSellingProduct': 'N/A',
     'topSellingCount': 0,
   };
+  List<Map<String, dynamic>> _recentActivities = [];
   bool _isLoading = true;
-
   @override
   void initState() {
     super.initState();
-    _loadSalesStats();
+    _loadDashboardData();
   }
 
-  Future<void> _loadSalesStats() async {
+  Future<void> _loadDashboardData() async {
     try {
       setState(() {
         _isLoading = true;
       });
 
-      Map<String, dynamic> stats = await _salesService.getSalesStats();
+      // Load sales stats and activities in parallel
+      final results = await Future.wait([
+        _salesService.getSalesStats(),
+        _activityService.getRecentActivities(),
+      ]);
 
       setState(() {
-        _salesStats = stats;
+        _salesStats = results[0] as Map<String, dynamic>;
+        _recentActivities = results[1] as List<Map<String, dynamic>>;
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading sales stats: $e');
+      print('Error loading dashboard data: $e');
       setState(() {
         _isLoading = false;
       });
@@ -71,7 +78,7 @@ class _DashboardState extends State<Dashboard> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadSalesStats,
+            onPressed: _loadDashboardData,
             tooltip: 'Refresh Dashboard',
           ),
           const SizedBox(width: 8),
@@ -181,7 +188,7 @@ class _DashboardState extends State<Dashboard> {
                               _buildStatCard(
                                 context,
                                 'Products',
-                                '120', // This would come from product service
+                                _salesStats['totalProducts']?.toString() ?? '0',
                                 Icons.shopping_cart,
                                 Colors.blue,
                               ),
@@ -260,124 +267,86 @@ class _DashboardState extends State<Dashboard> {
                           size: 16,
                         ),
                       ),
-                    ),
-
-                    Card(
-                      color: themeProvider.cardBackgroundColor,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: themeProvider.isDarkMode
-                              ? Colors.green.shade800
-                              : Colors.green.shade100,
-                          child: Icon(
-                            Icons.shopping_bag,
-                            color: themeProvider.isDarkMode
-                                ? Colors.green.shade100
-                                : Colors.green.shade800,
+                    ), // Activities list
+                    if (_recentActivities.isEmpty)
+                      Card(
+                        color: themeProvider.cardBackgroundColor,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.timeline,
+                                size: 48,
+                                color: themeProvider.textColor.withOpacity(0.3),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No recent activities',
+                                style: TextStyle(
+                                  color:
+                                      themeProvider.textColor.withOpacity(0.7),
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Start using the app to see activities here',
+                                style: TextStyle(
+                                  color:
+                                      themeProvider.textColor.withOpacity(0.5),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        title: Text(
-                          'New Order Received',
-                          style: TextStyle(
-                            color: themeProvider.textColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Order #1234 - 25 minutes ago',
-                          style: TextStyle(
-                            color: themeProvider.textColor.withOpacity(0.7),
-                          ),
-                        ),
-                        trailing: Icon(
-                          Icons.arrow_forward_ios,
-                          color: themeProvider.textColor.withOpacity(0.5),
-                          size: 16,
-                        ),
-                      ),
-                    ),
-
-                    Card(
-                      color: themeProvider.cardBackgroundColor,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: themeProvider.isDarkMode
-                              ? Colors.purple.shade800
-                              : Colors.purple.shade100,
-                          child: Icon(
-                            Icons.person_add,
-                            color: themeProvider.isDarkMode
-                                ? Colors.purple.shade100
-                                : Colors.purple.shade800,
-                          ),
-                        ),
-                        title: Text(
-                          'New User Registration',
-                          style: TextStyle(
-                            color: themeProvider.textColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'John Smith - 1 hour ago',
-                          style: TextStyle(
-                            color: themeProvider.textColor.withOpacity(0.7),
-                          ),
-                        ),
-                        trailing: Icon(
-                          Icons.arrow_forward_ios,
-                          color: themeProvider.textColor.withOpacity(0.5),
-                          size: 16,
-                        ),
-                      ),
-                    ),
-
-                    Card(
-                      color: themeProvider.cardBackgroundColor,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: themeProvider.isDarkMode
-                              ? Colors.orange.shade800
-                              : Colors.orange.shade100,
-                          child: Icon(
-                            Icons.payment,
-                            color: themeProvider.isDarkMode
-                                ? Colors.orange.shade100
-                                : Colors.orange.shade800,
-                          ),
-                        ),
-                        title: Text(
-                          'Payment Received',
-                          style: TextStyle(
-                            color: themeProvider.textColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        subtitle: Text(
-                          '\$320.00 for Order #1230 - 2 hours ago',
-                          style: TextStyle(
-                            color: themeProvider.textColor.withOpacity(0.7),
-                          ),
-                        ),
-                        trailing: Icon(
-                          Icons.arrow_forward_ios,
-                          color: themeProvider.textColor.withOpacity(0.5),
-                          size: 16,
-                        ),
-                      ),
-                    ),
+                      )
+                    else
+                      ..._recentActivities
+                          .map((activity) => Card(
+                                color: themeProvider.cardBackgroundColor,
+                                margin: const EdgeInsets.only(bottom: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: _getActivityColor(
+                                        activity['color'], themeProvider),
+                                    child: Icon(
+                                      _getActivityIcon(activity['icon']),
+                                      color: _getActivityIconColor(
+                                          activity['color'], themeProvider),
+                                    ),
+                                  ),
+                                  title: Text(
+                                    activity['title'],
+                                    style: TextStyle(
+                                      color: themeProvider.textColor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    activity['subtitle'],
+                                    style: TextStyle(
+                                      color: themeProvider.textColor
+                                          .withOpacity(0.7),
+                                    ),
+                                  ),
+                                  trailing: Icon(
+                                    Icons.arrow_forward_ios,
+                                    color: themeProvider.textColor
+                                        .withOpacity(0.5),
+                                    size: 16,
+                                  ),
+                                ),
+                              ))
+                          .toList(),
                   ],
                 ),
               ),
@@ -434,5 +403,71 @@ class _DashboardState extends State<Dashboard> {
         ),
       ),
     );
+  }
+
+  // Helper methods for activity display
+  Color _getActivityColor(String colorName, ThemeProvider themeProvider) {
+    switch (colorName) {
+      case 'orange':
+        return themeProvider.isDarkMode
+            ? Colors.orange.shade800
+            : Colors.orange.shade100;
+      case 'green':
+        return themeProvider.isDarkMode
+            ? Colors.green.shade800
+            : Colors.green.shade100;
+      case 'purple':
+        return themeProvider.isDarkMode
+            ? Colors.purple.shade800
+            : Colors.purple.shade100;
+      case 'blue':
+        return themeProvider.isDarkMode
+            ? Colors.blue.shade800
+            : Colors.blue.shade100;
+      default:
+        return themeProvider.isDarkMode
+            ? Colors.grey.shade800
+            : Colors.grey.shade100;
+    }
+  }
+
+  Color _getActivityIconColor(String colorName, ThemeProvider themeProvider) {
+    switch (colorName) {
+      case 'orange':
+        return themeProvider.isDarkMode
+            ? Colors.orange.shade100
+            : Colors.orange.shade800;
+      case 'green':
+        return themeProvider.isDarkMode
+            ? Colors.green.shade100
+            : Colors.green.shade800;
+      case 'purple':
+        return themeProvider.isDarkMode
+            ? Colors.purple.shade100
+            : Colors.purple.shade800;
+      case 'blue':
+        return themeProvider.isDarkMode
+            ? Colors.blue.shade100
+            : Colors.blue.shade800;
+      default:
+        return themeProvider.isDarkMode
+            ? Colors.grey.shade100
+            : Colors.grey.shade800;
+    }
+  }
+
+  IconData _getActivityIcon(String iconName) {
+    switch (iconName) {
+      case 'payment':
+        return Icons.payment;
+      case 'inventory':
+        return Icons.inventory;
+      case 'person_add':
+        return Icons.person_add;
+      case 'shopping_bag':
+        return Icons.shopping_bag;
+      default:
+        return Icons.notifications;
+    }
   }
 }

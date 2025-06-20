@@ -14,6 +14,8 @@ import 'package:desktop_search_a_holic/settings_page.dart';
 import 'package:desktop_search_a_holic/splash.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/uploadData.dart';
+import 'package:desktop_search_a_holic/backup_history_page.dart';
+import 'package:desktop_search_a_holic/auto_backup_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
 
@@ -23,6 +25,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await createFilesAndFolders();
+
+  // Initialize auto backup service
+  await AutoBackupService().initialize();
 
   runApp(
     ChangeNotifierProvider(
@@ -50,8 +55,12 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const Profile(),
         '/products': (context) => const Product(),
         '/addProduct': (context) => const AddProduct(),
-        '/editProduct': (context) =>
-            const EditProduct(productID: '1'), // Dummy productID
+        '/editProduct': (context) {
+          final arguments = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          final productId = arguments?['productId'] as String? ?? '';
+          return EditProduct(productID: productId);
+        },
         '/invoices': (context) => const Invoice(),
         '/reports': (context) => const Reports(),
         '/chatBot': (context) => ChatBotPage(),
@@ -63,6 +72,7 @@ class MyApp extends StatelessWidget {
         '/uploadData': (context) => const UploadData(),
         '/settings': (context) => const SettingsPage(),
         '/pos': (context) => const enhanced.POS(),
+        '/backup-history': (context) => const BackupHistoryPage(),
       },
     );
   }

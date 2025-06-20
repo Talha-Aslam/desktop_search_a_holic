@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,7 +7,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/foundation.dart';
 
 class Registration extends StatefulWidget {
   const Registration({super.key});
@@ -26,6 +26,7 @@ class _RegistrationState extends State<Registration> {
       TextEditingController(); // Address controller for display only
 
   Position? _currentPosition;
+  String _currentAddress = "No location selected";
   bool _isLocationLoading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -64,33 +65,18 @@ class _RegistrationState extends State<Registration> {
 
   // Check and request location permissions
   Future<void> _checkLocationPermission() async {
-    // Skip permission check for web platform
-    if (kIsWeb) {
+    final status = await Permission.location.status;
+    if (status.isGranted) {
+      // Permission already granted
       return;
-    }
-
-    try {
-      final status = await Permission.location.status;
-      if (status.isGranted) {
-        // Permission already granted
-        return;
-      } else if (status.isDenied) {
-        // Request permission
-        await Permission.location.request();
-      }
-    } catch (e) {
-      print('Permission check error: $e');
-      // Continue without permission check on Windows if it fails
+    } else if (status.isDenied) {
+      // Request permission
+      await Permission.location.request();
     }
   }
 
   // Check if location services are enabled
   Future<bool> _checkLocationServicesEnabled() async {
-    // Skip service check for web platform
-    if (kIsWeb) {
-      return true; // Assume available on web, will handle errors in the actual request
-    }
-
     bool serviceEnabled;
 
     // Test if location services are enabled
@@ -101,10 +87,6 @@ class _RegistrationState extends State<Registration> {
         SnackBar(
           content: Text(
               'Location services are disabled. Please enable them in your device settings.'),
-          action: SnackBarAction(
-            label: 'Enter manually',
-            onPressed: _showManualAddressInputDialog,
-          ),
           duration: Duration(seconds: 4),
         ),
       );
@@ -125,7 +107,9 @@ class _RegistrationState extends State<Registration> {
       if (kIsWeb) {
         await _handleWebLocation();
         return;
-      } // Check permission first (for mobile and desktop platforms)
+      }
+
+      // Check permission first (for mobile and desktop platforms)
       try {
         final permissionStatus = await Permission.location.status;
         if (!permissionStatus.isGranted) {
@@ -154,7 +138,7 @@ class _RegistrationState extends State<Registration> {
         timeLimit: Duration(seconds: 10), // Add timeout
       );
 
-      // Convert position to address (may not work on web)
+      // Convert position to address
       await _convertPositionToAddress(position);
     } catch (e) {
       print('Error getting location: $e');
@@ -186,25 +170,8 @@ class _RegistrationState extends State<Registration> {
         timeLimit: Duration(seconds: 10),
       );
 
-      // For web, we'll just use coordinates and ask user to enter address manually
-      setState(() {
-        _currentPosition = position;
-        _addressController.text =
-            'Location: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
-      });
-
-      // Show success message with option to enter manual address
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Location coordinates obtained. You may enter a more descriptive address.'),
-          action: SnackBarAction(
-            label: 'Enter Address',
-            onPressed: _showManualAddressInputDialog,
-          ),
-          duration: Duration(seconds: 5),
-        ),
-      );
+      // For web, we'll try geocoding but gracefully handle failures
+      await _convertPositionToAddress(position);
     } catch (e) {
       print('Web location error: $e');
       // Fallback to manual address input for web
@@ -234,6 +201,7 @@ class _RegistrationState extends State<Registration> {
         final cleanedAddress = _cleanUpAddress(address);
         setState(() {
           _currentPosition = position;
+          _currentAddress = cleanedAddress;
           _addressController.text = cleanedAddress;
         });
 
@@ -249,8 +217,9 @@ class _RegistrationState extends State<Registration> {
         // If no placemark found, use coordinates but don't show error
         setState(() {
           _currentPosition = position;
-          _addressController.text =
+          _currentAddress =
               'Location: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+          _addressController.text = _currentAddress;
         });
 
         // Show informational message only
@@ -271,8 +240,9 @@ class _RegistrationState extends State<Registration> {
       // If geocoding fails, just use coordinates without showing error
       setState(() {
         _currentPosition = position;
-        _addressController.text =
+        _currentAddress =
             'Location: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+        _addressController.text = _currentAddress;
       });
 
       // Only show gentle suggestion, not an error
@@ -294,24 +264,22 @@ class _RegistrationState extends State<Registration> {
   void _handleGeocodingError(dynamic error) {
     String errorMessage;
 
-    if (kIsWeb) {
-      // Web-specific error handling
-      errorMessage =
-          'Location access may be limited in web browsers. Please enter your address manually.';
-    } else if (error is PermissionDeniedException) {
+    if (error is PermissionDeniedException) {
       errorMessage = 'Location permission denied';
     } else if (error is LocationServiceDisabledException) {
       errorMessage = 'Location services are disabled';
     } else if (error.toString().contains('null')) {
-      errorMessage =
-          'Location service unavailable. Please enter your address manually.';
+      errorMessage = kIsWeb
+          ? 'Location services may be limited in web browsers. Please enter your address manually.'
+          : 'Location service unavailable. Please enter your address manually.';
     } else if (error.toString().contains('PlatformException')) {
       // Handle Windows-specific platform exceptions
       errorMessage =
           'Location service not available on this device. Please enter your address manually.';
     } else {
-      errorMessage =
-          'Failed to get location: Please enter your address manually.';
+      errorMessage = kIsWeb
+          ? 'Location services are not fully supported in web browsers. Please enter your address manually.'
+          : 'Failed to get location: Please enter your address manually.';
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -946,7 +914,7 @@ class _RegistrationState extends State<Registration> {
                                         ),
                                       ),
                                       if (_isLocationLoading)
-                                        SizedBox(
+                                        Container(
                                           width: 24,
                                           height: 24,
                                           child: CircularProgressIndicator(
@@ -956,8 +924,7 @@ class _RegistrationState extends State<Registration> {
                                                     Colors.white),
                                           ),
                                         )
-                                      else if (_addressController
-                                          .text.isNotEmpty)
+                                      else if (!_addressController.text.isEmpty)
                                         IconButton(
                                           icon: Icon(Icons.refresh,
                                               color: Colors.white),
@@ -1223,7 +1190,7 @@ class _RegistrationState extends State<Registration> {
                           value: true,
                           onChanged: (value) {},
                           checkColor: themeProvider.gradientColors[0],
-                          fillColor: WidgetStateProperty.all(Colors.white),
+                          fillColor: MaterialStateProperty.all(Colors.white),
                         ),
                         Expanded(
                           child: Text(
@@ -1288,7 +1255,6 @@ class _RegistrationState extends State<Registration> {
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.underline,
                             ),
                           ),
                         ),

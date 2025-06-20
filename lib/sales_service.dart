@@ -32,11 +32,10 @@ class SalesService {
         throw Exception('User not logged in');
       }
 
-      // Filter sales by current user's email
+      // Query without orderBy to avoid composite index requirement
       QuerySnapshot querySnapshot = await _firestore
           .collection('sales')
           .where('userEmail', isEqualTo: _auth.currentUser!.email)
-          .orderBy('createdAt', descending: true)
           .get();
 
       List<Map<String, dynamic>> sales = [];
@@ -46,6 +45,17 @@ class SalesService {
         saleData['id'] = doc.id; // Add document ID to the sale data
         sales.add(saleData);
       }
+
+      // Sort by createdAt in memory (most recent first)
+      sales.sort((a, b) {
+        DateTime dateA = a['createdAt'] != null
+            ? (a['createdAt'] as Timestamp).toDate()
+            : DateTime.now();
+        DateTime dateB = b['createdAt'] != null
+            ? (b['createdAt'] as Timestamp).toDate()
+            : DateTime.now();
+        return dateB.compareTo(dateA);
+      });
 
       return sales;
     } catch (e) {
@@ -64,15 +74,13 @@ class SalesService {
       // Calculate start and end of today
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      final tomorrow = DateTime(now.year, now.month, now.day + 1);
-
-      // Filter sales by current user's email and today's date
+      final tomorrow = DateTime(now.year, now.month,
+          now.day + 1); // Filter sales by current user's email and today's date
       QuerySnapshot querySnapshot = await _firestore
           .collection('sales')
           .where('userEmail', isEqualTo: _auth.currentUser!.email)
           .where('createdAt', isGreaterThanOrEqualTo: today)
           .where('createdAt', isLessThan: tomorrow)
-          .orderBy('createdAt', descending: true)
           .get();
 
       List<Map<String, dynamic>> sales = [];
@@ -82,6 +90,17 @@ class SalesService {
         saleData['id'] = doc.id; // Add document ID to the sale data
         sales.add(saleData);
       }
+
+      // Sort by createdAt in memory (most recent first)
+      sales.sort((a, b) {
+        DateTime dateA = a['createdAt'] != null
+            ? (a['createdAt'] as Timestamp).toDate()
+            : DateTime.now();
+        DateTime dateB = b['createdAt'] != null
+            ? (b['createdAt'] as Timestamp).toDate()
+            : DateTime.now();
+        return dateB.compareTo(dateA);
+      });
 
       return sales;
     } catch (e) {
@@ -197,7 +216,11 @@ class SalesService {
           topSellingProduct = product;
           topSellingCount = count;
         }
-      });
+      }); // Get product count from current user
+      QuerySnapshot productsSnapshot = await _firestore
+          .collection('products')
+          .where('userEmail', isEqualTo: _auth.currentUser!.email)
+          .get();
 
       return {
         'totalSalesAmount': totalSales,
@@ -205,6 +228,7 @@ class SalesService {
         'uniqueCustomers': customers.length,
         'topSellingProduct': topSellingProduct,
         'topSellingCount': topSellingCount,
+        'totalProducts': productsSnapshot.docs.length,
       };
     } catch (e) {
       rethrow;

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
+import 'package:desktop_search_a_holic/firebase_service.dart';
+import 'package:quickalert/quickalert.dart';
 
 class EditProduct extends StatefulWidget {
   final String productID;
@@ -20,46 +22,265 @@ class _EditProductState extends State<EditProduct> {
   final TextEditingController _productExpiry = TextEditingController();
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final FirebaseService _firebaseService = FirebaseService();
+
+  bool _isLoading = true;
+  bool _isSaving = false;
+  Map<String, dynamic>? _originalProductData;
 
   @override
   void initState() {
     super.initState();
-    // Load dummy data for the product
-    _loadDummyProductData();
+    _loadProductData();
   }
 
-  void _loadDummyProductData() {
-    // Dummy data for the product
-    var dummyProductData = {
-      "id": widget.productID,
-      "Name": "Dummy Product",
-      "Price": "100",
-      "Quantity": "10",
-      "Type": "Public",
-      "Expiry": "2023-12-31",
-      "Category": "Tablet",
-    };
-
-    _productName.text = dummyProductData['Name']!;
-    _productPrice.text = dummyProductData['Price']!;
-    _productQty.text = dummyProductData['Quantity']!;
-    _productType.text = dummyProductData['Type']!;
-    _productCategory.text = dummyProductData['Category']!;
-    _productExpiry.text = dummyProductData['Expiry']!;
+  @override
+  void dispose() {
+    _productName.dispose();
+    _productPrice.dispose();
+    _productQty.dispose();
+    _productType.dispose();
+    _productCategory.dispose();
+    _productExpiry.dispose();
+    super.dispose();
   }
 
-  void _saveProduct() {
-    if (_formKey.currentState!.validate()) {
-      // Dummy save logic
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Product saved successfully!')),
-      );
+  Future<void> _loadProductData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Debug logging
+      print('Attempting to load product with ID: ${widget.productID}');
+
+      // Check if productID is valid
+      if (widget.productID.isEmpty) {
+        throw Exception('Product ID is empty');
+      }
+
+      // Check if this is a dummy product
+      if (widget.productID.startsWith('dummy_')) {
+        throw Exception(
+            'This is demonstration data. Please add real products to edit them.');
+      }
+
+      Map<String, dynamic>? productData =
+          await _firebaseService.getProduct(widget.productID);
+
+      if (productData != null) {
+        print('Product data loaded successfully: ${productData['name']}');
+        setState(() {
+          _originalProductData = productData;
+          _productName.text = productData['name'] ?? '';
+          _productPrice.text = productData['price']?.toString() ?? '';
+          _productQty.text = productData['quantity']?.toString() ?? '';
+          _productType.text = productData['type'] ?? 'Public';
+          _productCategory.text = productData['category'] ?? '';
+          _productExpiry.text = productData['expiry'] ?? '';
+          _isLoading = false;
+        });
+      } else {
+        // Product not found, show error and navigate back
+        print('Product not found for ID: ${widget.productID}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Product not found or access denied'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      print('Error loading product: $e');
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading product: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    }
+  }
+
+  Future<void> _saveProduct() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      // Prepare updated product data
+      Map<String, dynamic> updatedProductData = {
+        'name': _productName.text.trim(),
+        'price': double.tryParse(_productPrice.text) ?? 0.0,
+        'quantity': int.tryParse(_productQty.text) ?? 0,
+        'type': _productType.text.trim(),
+        'category': _productCategory.text.trim(),
+        'expiry': _productExpiry.text.trim(),
+      };
+
+      // Update product in Firebase
+      await _firebaseService.updateProduct(
+          widget.productID, updatedProductData);
+
+      if (mounted) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.success,
+          title: "Success",
+          text: "Product updated successfully!",
+        );
+
+        // Navigate back to previous screen
+        Navigator.pop(
+            context, true); // Return true to indicate successful update
+      }
+    } catch (e) {
+      if (mounted) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: "Error",
+          text: "Failed to update product: ${e.toString()}",
+        );
+      }
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
+
+  Future<void> _deleteProduct() async {
+    // Show confirmation dialog
+    bool? confirmDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final themeProvider = Provider.of<ThemeProvider>(context);
+        return AlertDialog(
+          backgroundColor: themeProvider.cardBackgroundColor,
+          title: Text(
+            'Delete Product',
+            style: TextStyle(color: themeProvider.textColor),
+          ),
+          content: Text(
+            'Are you sure you want to delete "${_productName.text}"? This action cannot be undone.',
+            style: TextStyle(color: themeProvider.textColor),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: themeProvider.textColor),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmDelete == true) {
+      try {
+        setState(() {
+          _isSaving = true;
+        });
+
+        await _firebaseService.deleteProduct(widget.productID);
+
+        if (mounted) {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.success,
+            title: "Success",
+            text: "Product deleted successfully!",
+          );
+
+          Navigator.pop(
+              context, true); // Return true to indicate successful deletion
+        }
+      } catch (e) {
+        if (mounted) {
+          QuickAlert.show(
+            context: context,
+            type: QuickAlertType.error,
+            title: "Error",
+            text: "Failed to delete product: ${e.toString()}",
+          );
+        }
+      } finally {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: themeProvider.gradientColors,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          title: const Text(
+            'Edit Product',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+        body: Container(
+          decoration: BoxDecoration(
+            color: themeProvider.scaffoldBackgroundColor,
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  color: themeProvider.gradientColors[0],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Loading product data...',
+                  style: TextStyle(
+                    color: themeProvider.textColor,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -80,43 +301,7 @@ class _EditProductState extends State<EditProduct> {
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.white),
             tooltip: 'Delete Product',
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  backgroundColor: themeProvider.cardBackgroundColor,
-                  title: Text(
-                    'Delete Product',
-                    style: TextStyle(color: themeProvider.textColor),
-                  ),
-                  content: Text(
-                    'Are you sure you want to delete this product?',
-                    style: TextStyle(color: themeProvider.textColor),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(color: themeProvider.textColor),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Product deleted')),
-                        );
-                      },
-                      child: const Text(
-                        'Delete',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+            onPressed: _isSaving ? null : _deleteProduct,
           ),
           const SizedBox(width: 8),
         ],
@@ -321,22 +506,47 @@ class _EditProductState extends State<EditProduct> {
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
-                            onPressed: _saveProduct,
+                            onPressed: _isSaving ? null : _saveProduct,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: themeProvider.gradientColors[0],
                               foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               elevation: 2,
                             ),
-                            child: const Text(
-                              'SAVE CHANGES',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
+                            child: _isSaving
+                                ? const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.white),
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        'SAVING...',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : const Text(
+                                    'SAVE CHANGES',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(height: 8),
