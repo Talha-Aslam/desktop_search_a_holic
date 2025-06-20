@@ -40,7 +40,7 @@ class FirebaseService {
   // Store user data in Firestore
   Future<void> storeUserData(String userId, Map<String, dynamic> data) async {
     try {
-      await _firestore.collection('users').doc(userId).set(data);
+      await _firestore.collection('pharmacies').doc(userId).set(data);
     } catch (e) {
       rethrow;
     }
@@ -49,7 +49,7 @@ class FirebaseService {
   // Get user data from Firestore
   Future<DocumentSnapshot> getUserData(String userId) async {
     try {
-      return await _firestore.collection('users').doc(userId).get();
+      return await _firestore.collection('pharmacies').doc(userId).get();
     } catch (e) {
       rethrow;
     }
@@ -108,7 +108,7 @@ class FirebaseService {
         productData['userEmail'] = _auth.currentUser!.email;
         
         // Get user data to retrieve the shop ID
-        DocumentSnapshot userData = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
+        DocumentSnapshot userData = await _firestore.collection('pharmacies').doc(_auth.currentUser!.uid).get();
         if (userData.exists) {
           Map<String, dynamic> userDataMap = userData.data() as Map<String, dynamic>;
           // Add shop ID to product data if available
@@ -261,7 +261,7 @@ class FirebaseService {
       } else {
         // Get shop ID from user profile if not already in the product
         try {
-          DocumentSnapshot userData = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
+          DocumentSnapshot userData = await _firestore.collection('pharmacies').doc(_auth.currentUser!.uid).get();
           if (userData.exists) {
             Map<String, dynamic> userDataMap = userData.data() as Map<String, dynamic>;
             if (userDataMap.containsKey('shopId') && userDataMap['shopId'] != null && userDataMap['shopId'] != '') {
@@ -348,7 +348,7 @@ class FirebaseService {
       }
       
       DocumentSnapshot doc = 
-          await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
+          await _firestore.collection('pharmacies').doc(_auth.currentUser!.uid).get();
           
       if (doc.exists) {
         Map<String, dynamic> userData = 
@@ -386,7 +386,7 @@ class FirebaseService {
       );
       
       // Update user's shop ID
-      await _firestore.collection('users').doc(_auth.currentUser!.uid).update({
+      await _firestore.collection('pharmacies').doc(_auth.currentUser!.uid).update({
         'shopId': shopId
       });
     } catch (e) {

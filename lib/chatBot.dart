@@ -117,6 +117,20 @@ class _ChatBotPageState extends State<ChatBotPage> {
     } else if (userMessageLower.contains('thank')) {
       botResponse =
           "You're welcome! Feel free to ask if you need any other assistance.";
+    } else if (userMessageLower.contains('account') &&
+        (userMessageLower.contains('create') ||
+            userMessageLower.contains('new') ||
+            userMessageLower.contains('register') ||
+            userMessageLower.contains('store') ||
+            userMessageLower.contains('save'))) {
+      botResponse =
+          "New accounts are stored in the 'pharmacies' collection in Firestore database. When you register, your account details including name, email, phone, automatically generated shop ID, address, and location coordinates are saved there. Your Shop ID will be automatically generated in the format SHOP0001, SHOP0002, etc.";
+    } else if (userMessageLower.contains('shop') &&
+        (userMessageLower.contains('id') ||
+            userMessageLower.contains('generate') ||
+            userMessageLower.contains('automatic'))) {
+      botResponse =
+          "Shop IDs are automatically generated during registration. They follow the format SHOP0001, SHOP0002, etc. You don't need to manually enter a shop ID - the system will assign one for you when you create your account.";
     } else {
       // Default responses for unknown queries
       List<String> defaultResponses = [

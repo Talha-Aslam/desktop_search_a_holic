@@ -27,7 +27,7 @@ class _SidebarState extends State<Sidebar> {
     if (_auth.currentUser != null) {
       try {
         DocumentSnapshot userDoc = await _firestore
-            .collection('users')
+            .collection('pharmacies')
             .doc(_auth.currentUser!.uid)
             .get();
             

@@ -22,8 +22,6 @@ class _RegistrationState extends State<Registration> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _shopIdController =
-      TextEditingController(); // Added shop ID controller
   final TextEditingController _addressController =
       TextEditingController(); // Address controller for display only
 
@@ -60,7 +58,6 @@ class _RegistrationState extends State<Registration> {
     _emailController.dispose();
     _confirmPasswordController.dispose();
     _phoneController.dispose();
-    _shopIdController.dispose(); // Dispose shop ID controller
     _addressController.dispose(); // Dispose address controller
     super.dispose();
   }
@@ -422,6 +419,39 @@ class _RegistrationState extends State<Registration> {
     );
   }
 
+  // Generate automatic shop ID
+  Future<String> _generateShopId() async {
+    try {
+      // Get count of existing pharmacies to generate sequential ID
+      QuerySnapshot existingPharmacies = await _firestore.collection('pharmacies').get();
+      int count = existingPharmacies.docs.length + 1;
+      
+      // Generate shop ID with format: SHOP + 4-digit number (e.g., SHOP0001)
+      String shopId = 'SHOP${count.toString().padLeft(4, '0')}';
+      
+      // Check if this shop ID already exists
+      QuerySnapshot existingShopId = await _firestore
+          .collection('pharmacies')
+          .where('shopId', isEqualTo: shopId)
+          .get();
+      
+      // If shop ID exists, increment until we find unique one
+      while (existingShopId.docs.isNotEmpty) {
+        count++;
+        shopId = 'SHOP${count.toString().padLeft(4, '0')}';
+        existingShopId = await _firestore
+            .collection('pharmacies')
+            .where('shopId', isEqualTo: shopId)
+            .get();
+      }
+      
+      return shopId;
+    } catch (e) {
+      // Fallback to timestamp-based ID if query fails
+      return 'SHOP${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
+    }
+  }
+
   // Register user with Firebase
   Future<void> registerUser() async {
     if (!_formKey.currentState!.validate()) {
@@ -456,12 +486,15 @@ class _RegistrationState extends State<Registration> {
         password: _passwordController.text,
       );
 
+      // Generate automatic shop ID
+      String autoShopId = await _generateShopId();
+
       // Store additional user data in Firestore
       Map<String, dynamic> userData = {
         'name': _nameController.text,
         'email': _emailController.text.trim(),
         'phone': _phoneController.text,
-        'shopId': _shopIdController.text, // Store shop ID
+        'shopId': autoShopId, // Store automatically generated shop ID
         'address': _addressController.text, // Store address
         'createdAt': FieldValue.serverTimestamp(),
       };
@@ -475,14 +508,16 @@ class _RegistrationState extends State<Registration> {
       }
 
       await _firestore
-          .collection('users')
+          .collection('pharmacies')
           .doc(userCredential.user!.uid)
           .set(userData);
 
-      // Show success message
+      // Show success message with generated shop ID
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Registration successful! You can now login.')),
+        SnackBar(
+          content: Text('Registration successful! Your Shop ID is: $autoShopId. You can now login.'),
+          duration: Duration(seconds: 5),
+        ),
       );
 
       // Navigate to login page
@@ -821,48 +856,29 @@ class _RegistrationState extends State<Registration> {
                     ),
                     const SizedBox(height: 16.0),
 
-                    // Shop ID field
-                    TextFormField(
-                      controller: _shopIdController,
-                      decoration: InputDecoration(
-                        labelText: 'Shop ID',
-                        labelStyle: const TextStyle(color: Colors.white),
-                        hintText: 'Enter your shop ID',
-                        hintStyle:
-                            TextStyle(color: Colors.white.withOpacity(0.7)),
-                        helperText: 'This unique ID identifies your business',
-                        helperStyle:
-                            TextStyle(color: Colors.white.withOpacity(0.8)),
-                        prefixIcon:
-                            const Icon(Icons.store, color: Colors.white),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Colors.white),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide:
-                              const BorderSide(color: Colors.white, width: 2),
-                        ),
-                        errorStyle: const TextStyle(
-                          color: Colors.yellow,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        filled: !themeProvider.isDarkMode,
-                        fillColor: !themeProvider.isDarkMode
-                            ? Colors.black.withOpacity(0.3)
-                            : Colors.transparent,
+                    // Shop ID information
+                    Container(
+                      padding: const EdgeInsets.all(12.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white.withOpacity(0.3)),
                       ),
-                      style: const TextStyle(color: Colors.white),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your shop ID';
-                        }
-                        return null;
-                      },
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.white, size: 20),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Your Shop ID will be automatically generated during registration',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16.0),
 
