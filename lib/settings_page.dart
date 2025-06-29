@@ -978,7 +978,7 @@ class _SettingsPageState extends State<SettingsPage> {
                               padding:
                                   const EdgeInsets.only(top: 8.0, bottom: 16.0),
                               child: Text(
-                                '© 2025 Search-A-Holic. All rights reserved.',
+                                '© 2025 HealSearch. All rights reserved.',
                                 style: TextStyle(
                                   color:
                                       themeProvider.textColor.withOpacity(0.7),

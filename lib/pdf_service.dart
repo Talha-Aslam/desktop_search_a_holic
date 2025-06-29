@@ -3,83 +3,219 @@ import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 
 class PdfService {
-  static const String _appName = 'Search-A-Holic';
+  static const String _appName = 'HealSearch';
 
-  /// Generate a formatted invoice text that can be used for PDF creation
+  /// Generate a professional formatted invoice text that can be used for PDF creation
   static String generateInvoiceText(Map<String, dynamic> invoice) {
     final StringBuffer buffer = StringBuffer();
 
-    // Header
-    buffer.writeln('=' * 60);
-    buffer.writeln('                    INVOICE');
-    buffer.writeln('                 $_appName');
-    buffer.writeln('=' * 60);
-    buffer.writeln();
-
-    // Invoice details
-    buffer.writeln('Invoice ID: ${invoice['id'] ?? 'N/A'}');
+    // Professional Header with company branding
     buffer.writeln(
-        'Date: ${invoice['date'] ?? DateFormat('yyyy-MM-dd').format(DateTime.now())}');
-    buffer.writeln('Status: ${invoice['status'] ?? 'Completed'}');
+        '╔════════════════════════════════════════════════════════════════════╗');
+    buffer.writeln(
+        '║                            HEALSEARCH                             ║');
+    buffer.writeln(
+        '║                      Digital Inventory System                     ║');
+    buffer.writeln(
+        '║                                                                    ║');
+    buffer.writeln(
+        '║  📍 Address: 123 Business Street, Suite 100, City, State 12345   ║');
+    buffer.writeln(
+        '║  📧 Email: info@healsearch.com                                    ║');
+    buffer.writeln(
+        '║  📞 Phone: +1 (555) 123-4567                                     ║');
+    buffer.writeln(
+        '║  🌐 Website: www.healsearch.com                                   ║');
+    buffer.writeln(
+        '╚════════════════════════════════════════════════════════════════════╝');
     buffer.writeln();
 
-    // Customer details
-    buffer.writeln('BILL TO:');
-    buffer.writeln('-' * 20);
-    buffer
-        .writeln('Customer: ${invoice['customerName'] ?? 'Walk-in Customer'}');
-    if (invoice['customerPhone'] != null &&
-        invoice['customerPhone'].toString().isNotEmpty) {
-      buffer.writeln('Phone: ${invoice['customerPhone']}');
-    }
+    // Invoice Title
+    buffer.writeln('                               📄 INVOICE');
+    buffer.writeln(
+        '════════════════════════════════════════════════════════════════════');
     buffer.writeln();
 
-    // Items table
-    buffer.writeln('ITEMS:');
-    buffer.writeln('-' * 60);
-    buffer.writeln('Item                    Qty    Price     Total');
-    buffer.writeln('-' * 60);
+    // Invoice Details and Bill To in organized layout
+    buffer.writeln(
+        '┌─ INVOICE INFORMATION ─────────────────┬─ BILL TO ─────────────────────┐');
+
+    String invoiceId = 'Invoice ID: ${invoice['id'] ?? 'N/A'}';
+    String customerName =
+        'Customer: ${invoice['customerName'] ?? 'Walk-in Customer'}';
+    buffer.writeln(
+        '│ ${invoiceId.padRight(38)} │ ${customerName.padRight(29)} │');
+
+    String invoiceDate =
+        'Date: ${DateFormat('MMM dd, yyyy - hh:mm a').format(invoice['date'] ?? DateTime.now())}';
+    String address = 'Address: Not provided';
+    buffer.writeln('│ ${invoiceDate.padRight(38)} │ ${address.padRight(29)} │');
+
+    String invoiceStatus = 'Status: ${invoice['status'] ?? 'Completed'}';
+    String phone = invoice['customerPhone'] != null &&
+            invoice['customerPhone'].toString().isNotEmpty
+        ? 'Phone: ${invoice['customerPhone']}'
+        : 'Phone: Not provided';
+    buffer.writeln('│ ${invoiceStatus.padRight(38)} │ ${phone.padRight(29)} │');
+
+    String paymentMethod = 'Payment: ${invoice['paymentMethod'] ?? 'Cash'}';
+    String email = 'Email: Not provided';
+    buffer.writeln('│ ${paymentMethod.padRight(38)} │ ${email.padRight(29)} │');
+
+    buffer.writeln(
+        '└───────────────────────────────────────┴───────────────────────────────┘');
+    buffer.writeln();
+
+    // Items table with enhanced formatting
+    buffer.writeln('                          📦 ITEMS & SERVICES');
+    buffer.writeln(
+        '════════════════════════════════════════════════════════════════════');
+    buffer.writeln(
+        '┌────┬─────────────────────────────┬─────┬───────────┬──────────────┐');
+    buffer.writeln(
+        '│ #  │ Description                 │ Qty │ Unit Price│ Amount       │');
+    buffer.writeln(
+        '├────┼─────────────────────────────┼─────┼───────────┼──────────────┤');
 
     if (invoice['items'] != null) {
-      for (var item in invoice['items']) {
+      List<dynamic> items = invoice['items'];
+      for (int i = 0; i < items.length; i++) {
+        var item = items[i];
+        String itemNum = '${i + 1}'.padLeft(2);
+
         String name = (item['name'] ?? 'Unknown').toString();
-        if (name.length > 20) name = name.substring(0, 17) + '...';
+        if (name.length > 27) name = name.substring(0, 24) + '...';
+        name = name.padRight(27);
 
         int qty = item['quantity'] ?? 0;
         double price = (item['price'] ?? 0.0).toDouble();
         double total = price * qty;
 
-        buffer.writeln('${name.padRight(20)} ${qty.toString().padLeft(6)} '
-            '\$${price.toStringAsFixed(2).padLeft(8)} '
-            '\$${total.toStringAsFixed(2).padLeft(8)}');
+        String qtyStr = qty.toString().padLeft(3);
+        String priceStr = '\$${price.toStringAsFixed(2)}'.padLeft(9);
+        String totalStr = '\$${total.toStringAsFixed(2)}'.padLeft(12);
+
+        buffer
+            .writeln('│ $itemNum │ $name │ $qtyStr │ $priceStr │ $totalStr │');
       }
     }
 
-    buffer.writeln('-' * 60);
+    buffer.writeln(
+        '└────┴─────────────────────────────┴─────┴───────────┴──────────────┘');
+    buffer.writeln();
 
-    // Totals
+    // Payment Summary with professional styling
+    buffer.writeln('                           💰 PAYMENT SUMMARY');
+    buffer.writeln(
+        '════════════════════════════════════════════════════════════════════');
+
     double subtotal = (invoice['subtotal'] ?? 0.0).toDouble();
     double tax = (invoice['tax'] ?? 0.0).toDouble();
     double discount = (invoice['discount'] ?? 0.0).toDouble();
     double total = (invoice['total'] ?? 0.0).toDouble();
 
-    buffer
-        .writeln('Subtotal:${'\$${subtotal.toStringAsFixed(2)}'.padLeft(48)}');
+    // Calculate additional statistics
+    int totalItems = 0;
+    int totalQuantity = 0;
+    if (invoice['items'] != null) {
+      List<dynamic> items = invoice['items'];
+      totalItems = items.length;
+      totalQuantity =
+          items.fold(0, (sum, item) => sum + (item['quantity'] as int? ?? 0));
+    }
+
+    // Left column: Breakdown, Right column: Summary
+    buffer.writeln(
+        '┌─ COST BREAKDOWN ──────────────────────┬─ ORDER SUMMARY ──────────────┐');
+    buffer.writeln(
+        '│ Subtotal:              \$${subtotal.toStringAsFixed(2).padLeft(12)} │ Total Items:         ${totalItems.toString().padLeft(8)} │');
     if (discount > 0) {
       buffer.writeln(
-          'Discount:${'-\$${discount.toStringAsFixed(2)}'.padLeft(48)}');
+          '│ Discount Applied:     -\$${discount.toStringAsFixed(2).padLeft(12)} │ Total Quantity:      ${totalQuantity.toString().padLeft(8)} │');
+    } else {
+      buffer.writeln(
+          '│ Discount Applied:      \$${0.00.toStringAsFixed(2).padLeft(12)} │ Total Quantity:      ${totalQuantity.toString().padLeft(8)} │');
     }
-    buffer.writeln('Tax (10%):${'\$${tax.toStringAsFixed(2)}'.padLeft(47)}');
-    buffer.writeln('=' * 60);
-    buffer.writeln('TOTAL:${'\$${total.toStringAsFixed(2)}'.padLeft(51)}');
-    buffer.writeln('=' * 60);
+    buffer.writeln(
+        '│ Tax (10%):             \$${tax.toStringAsFixed(2).padLeft(12)} │ Payment Method:    ${(invoice['paymentMethod'] ?? 'Cash').toString().padLeft(10)} │');
+    buffer.writeln(
+        '├───────────────────────────────────────┼───────────────────────────────┤');
+    buffer.writeln(
+        '│ 💵 TOTAL AMOUNT DUE:   \$${total.toStringAsFixed(2).padLeft(12)} │ Status:              ${(invoice['status'] ?? 'Paid').toString().padLeft(8)} │');
+    buffer.writeln(
+        '└───────────────────────────────────────┴───────────────────────────────┘');
     buffer.writeln();
 
-    // Footer
-    buffer.writeln('Thank you for your business!');
+    // Additional Information
+    buffer.writeln('                        ℹ️  ADDITIONAL INFORMATION');
     buffer.writeln(
-        'Generated on: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}');
+        '════════════════════════════════════════════════════════════════════');
+    buffer.writeln(
+        '┌─ TRANSACTION DETAILS ─────────────────────────────────────────────┐');
+    String transactionId = (invoice['id'] ?? '').toString();
+    if (transactionId.length > 8)
+      transactionId = transactionId.substring(0, 8).toUpperCase();
+    buffer.writeln(
+        '│ Transaction ID: ${transactionId.padLeft(20)}                                     │');
+    buffer.writeln(
+        '│ Generated On: ${DateFormat('EEEE, MMMM dd, yyyy @ hh:mm a').format(DateTime.now()).padLeft(35)}   │');
+    String dueDate = DateFormat('MMM dd, yyyy')
+        .format(DateTime.now().add(Duration(days: 30)));
+    buffer.writeln(
+        '│ Due Date: ${dueDate.padLeft(25)} (Net 30)                              │');
+    buffer.writeln(
+        '└───────────────────────────────────────────────────────────────────┘');
     buffer.writeln();
+
+    // Terms and Conditions
+    buffer.writeln('                         📋 TERMS & CONDITIONS');
+    buffer.writeln(
+        '════════════════════════════════════════════════════════════════════');
+    buffer.writeln(
+        '┌─ IMPORTANT INFORMATION ───────────────────────────────────────────┐');
+    buffer.writeln(
+        '│ 1. Payment is due within 30 days of invoice date                  │');
+    buffer.writeln(
+        '│ 2. All sales are final unless otherwise agreed upon               │');
+    buffer.writeln(
+        '│ 3. Returns accepted within 30 days with original receipt          │');
+    buffer.writeln(
+        '│ 4. Late payments may incur additional charges                      │');
+    buffer.writeln(
+        '│ 5. For support or questions: support@healsearch.com               │');
+    buffer.writeln(
+        '│ 6. Business hours: Monday-Friday 9AM-6PM, Saturday 10AM-4PM       │');
+    buffer.writeln(
+        '└───────────────────────────────────────────────────────────────────┘');
+    buffer.writeln();
+
+    // Professional Footer
+    buffer.writeln(
+        '╔════════════════════════════════════════════════════════════════════╗');
+    buffer.writeln(
+        '║                                                                    ║');
+    buffer.writeln(
+        '║                  🙏 THANK YOU FOR YOUR BUSINESS! 🙏                ║');
+    buffer.writeln(
+        '║                                                                    ║');
+    buffer.writeln(
+        '║              Your trust and loyalty mean everything to us          ║');
+    buffer.writeln(
+        '║                                                                    ║');
+    buffer.writeln(
+        '║             📧 Questions? Contact us at info@healsearch.com       ║');
+    buffer.writeln(
+        '║             📞 Phone Support: +1 (555) 123-4567                   ║');
+    buffer.writeln(
+        '║             🌐 Visit us online: www.healsearch.com                 ║');
+    buffer.writeln(
+        '║                                                                    ║');
+    buffer.writeln(
+        '║                    Generated by HealSearch System                 ║');
+    buffer.writeln(
+        '║                        Professional Invoice v2.0                  ║');
+    buffer.writeln(
+        '╚════════════════════════════════════════════════════════════════════╝');
 
     return buffer.toString();
   }
@@ -276,61 +412,251 @@ class PdfService {
 
     html.write('''
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Invoice - ${invoice['id'] ?? 'N/A'}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice ${invoice['id'] ?? 'N/A'}</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; }
-        .company-name { font-size: 24px; font-weight: bold; }
-        .invoice-title { font-size: 20px; margin: 10px 0; }
-        .invoice-details { margin: 20px 0; }
-        .customer-details { margin: 20px 0; }
-        .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        .items-table th, .items-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .items-table th { background-color: #f2f2f2; }
-        .totals { margin: 20px 0; text-align: right; }
-        .total-line { margin: 5px 0; }
-        .grand-total { font-weight: bold; font-size: 18px; border-top: 2px solid #333; padding-top: 10px; }
-        .footer { text-align: center; margin-top: 40px; font-style: italic; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+            padding: 20px;
+        }
+        
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .company-name {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .company-subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+        
+        .company-contact {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .invoice-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-top: 20px;
+            letter-spacing: 2px;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .invoice-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .info-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .info-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .info-section p {
+            margin: 8px 0;
+            color: #555;
+        }
+        
+        .info-section strong {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .section-title {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .items-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .items-table th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9em;
+        }
+        
+        .items-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .items-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .items-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .totals {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .total-row:last-child {
+            border-bottom: none;
+        }
+        
+        .grand-total {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white !important;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .footer {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .thank-you {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .invoice-container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="company-name">$_appName</div>
-        <div class="invoice-title">INVOICE</div>
-    </div>
-    
-    <div class="invoice-details">
-        <strong>Invoice ID:</strong> ${invoice['id'] ?? 'N/A'}<br>
-        <strong>Date:</strong> ${invoice['date'] ?? DateFormat('yyyy-MM-dd').format(DateTime.now())}<br>
-        <strong>Status:</strong> ${invoice['status'] ?? 'Completed'}
-    </div>
-    
-    <div class="customer-details">
-        <strong>Bill To:</strong><br>
-        ${invoice['customerName'] ?? 'Walk-in Customer'}<br>
-''');
+    <div class="invoice-container">
+        <div class="header">
+            <div class="company-name">HEALSEARCH</div>
+            <div class="company-subtitle">Digital Inventory System</div>
+            <div class="company-contact">
+                📧 info@healsearch.com | 📞 +1 (555) 123-4567 | 🌐 www.healsearch.com
+            </div>
+            <div class="invoice-title">📄 INVOICE</div>
+        </div>
+        
+        <div class="content">
+            <div class="invoice-info">
+                <div class="info-section">
+                    <h3>📋 Invoice Details</h3>
+                    <p><strong>Invoice ID:</strong> ${invoice['id'] ?? 'N/A'}</p>
+                    <p><strong>Date:</strong> ${DateFormat('MMMM dd, yyyy - hh:mm a').format(invoice['date'] ?? DateTime.now())}</p>
+                    <p><strong>Status:</strong> <span style="color: #28a745; font-weight: bold;">${invoice['status'] ?? 'Completed'}</span></p>
+                    <p><strong>Payment Method:</strong> ${invoice['paymentMethod'] ?? 'Cash'}</p>
+                </div>
+                
+                <div class="info-section">
+                    <h3>👤 Bill To</h3>
+                    <p><strong>Customer:</strong> ${invoice['customerName'] ?? 'Walk-in Customer'}</p>''');
 
     if (invoice['customerPhone'] != null &&
         invoice['customerPhone'].toString().isNotEmpty) {
-      html.write('        Phone: ${invoice['customerPhone']}<br>');
+      html.write(
+          '''                    <p><strong>Phone:</strong> ${invoice['customerPhone']}</p>''');
+    } else {
+      html.write(
+          '''                    <p><strong>Phone:</strong> Not provided</p>''');
     }
 
     html.write('''
-    </div>
-    
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th>Item</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Total</th>
-            </tr>
-        </thead>
-        <tbody>
-''');
+                    <p><strong>Email:</strong> Not provided</p>
+                </div>
+            </div>
+            
+            <h3 class="section-title">🛒 Items & Services</h3>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">Item Description</th>
+                        <th style="width: 15%; text-align: center;">Quantity</th>
+                        <th style="width: 15%; text-align: right;">Unit Price</th>
+                        <th style="width: 20%; text-align: right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>''');
 
     if (invoice['items'] != null) {
       for (var item in invoice['items']) {
@@ -339,48 +665,63 @@ class PdfService {
         double total = price * qty;
 
         html.write('''
-            <tr>
-                <td>${item['name'] ?? 'Unknown'}</td>
-                <td>$qty</td>
-                <td>\$${price.toStringAsFixed(2)}</td>
-                <td>\$${total.toStringAsFixed(2)}</td>
-            </tr>
-''');
+                    <tr>
+                        <td>${item['name'] ?? 'Unknown'}</td>
+                        <td style="text-align: center;">$qty</td>
+                        <td style="text-align: right;">\$${price.toStringAsFixed(2)}</td>
+                        <td style="text-align: right; font-weight: bold;">\$${total.toStringAsFixed(2)}</td>
+                    </tr>''');
       }
     }
-
-    html.write('''
-        </tbody>
-    </table>
-    
-    <div class="totals">
-''');
 
     double subtotal = (invoice['subtotal'] ?? 0.0).toDouble();
     double tax = (invoice['tax'] ?? 0.0).toDouble();
     double discount = (invoice['discount'] ?? 0.0).toDouble();
     double total = (invoice['total'] ?? 0.0).toDouble();
 
-    html.write(
-        '        <div class="total-line">Subtotal: \$${subtotal.toStringAsFixed(2)}</div>');
+    html.write('''
+                </tbody>
+            </table>
+            
+            <div class="totals">
+                <h4 style="color: #667eea; margin-bottom: 20px;">💰 Payment Summary</h4>
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>\$${subtotal.toStringAsFixed(2)}</span>
+                </div>''');
 
     if (discount > 0) {
-      html.write(
-          '        <div class="total-line">Discount: -\$${discount.toStringAsFixed(2)}</div>');
+      html.write('''
+                <div class="total-row">
+                    <span>Discount:</span>
+                    <span style="color: #dc3545;">-\$${discount.toStringAsFixed(2)}</span>
+                </div>''');
     }
 
     html.write('''
-        <div class="total-line">Tax (10%): \$${tax.toStringAsFixed(2)}</div>
-        <div class="grand-total">Total: \$${total.toStringAsFixed(2)}</div>
-    </div>
-    
-    <div class="footer">
-        Thank you for your business!<br>
-        Generated on ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}
+                <div class="total-row">
+                    <span>Tax (10%):</span>
+                    <span>\$${tax.toStringAsFixed(2)}</span>
+                </div>
+                
+                <div class="total-row grand-total">
+                    <span>💵 TOTAL AMOUNT DUE:</span>
+                    <span>\$${total.toStringAsFixed(2)}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="thank-you">🙏 Thank You for Your Business! 🙏</div>
+            <p>Your trust and loyalty mean everything to us</p>
+            <p>Generated by HealSearch Digital Inventory System</p>
+            <p style="margin-top: 20px; font-size: 0.9em;">
+                Generated on ${DateFormat('EEEE, MMMM dd, yyyy @ hh:mm a').format(DateTime.now())}
+            </p>
+        </div>
     </div>
 </body>
-</html>
-''');
+</html>''');
 
     return html.toString();
   }

@@ -164,7 +164,7 @@ class ActivityService {
               'icon': 'person_add',
               'title': 'Account Created',
               'subtitle':
-                  'Welcome to Search-A-Holic! - ${_formatTimeAgo(dateTime)}',
+                  'Welcome to HealSearch! - ${_formatTimeAgo(dateTime)}',
               'timestamp': dateTime,
               'color': 'purple',
             });

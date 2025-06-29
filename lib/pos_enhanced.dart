@@ -1008,11 +1008,13 @@ class _POSState extends State<POS> {
                                               )
                                             : ListView.separated(
                                                 padding:
-                                                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 8),
                                                 itemCount: cart.length,
-                                                separatorBuilder:
-                                                    (context, index) =>
-                                                        const Divider(height: 8),
+                                                separatorBuilder: (context,
+                                                        index) =>
+                                                    const Divider(height: 8),
                                                 itemBuilder: (context, index) {
                                                   return _buildCartItem(
                                                       index, themeProvider);
@@ -1367,7 +1369,8 @@ class _POSState extends State<POS> {
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                ),                                const SizedBox(height: 1),
+                ),
+                const SizedBox(height: 1),
                 Text(
                   '\$${item['price']} × ${item['quantity']} = \$${itemTotal.toStringAsFixed(2)}',
                   style: TextStyle(

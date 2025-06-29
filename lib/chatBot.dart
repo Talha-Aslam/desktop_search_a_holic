@@ -224,7 +224,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Search-A-Holic Assistant',
+                                'HealSearch Assistant',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
