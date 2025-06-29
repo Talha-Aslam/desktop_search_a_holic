@@ -98,28 +98,105 @@ class FirebaseService {
     }
   }
 
+  // Check if user has a valid shop ID
+  Future<bool> hasValidShopId() async {
+    try {
+      String? shopId = await getUserShopId();
+      return shopId != null && shopId.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Get or create shop ID for current user
+  Future<String> ensureUserHasShopId() async {
+    try {
+      // Check if user is logged in
+      if (_auth.currentUser == null) {
+        throw Exception('User not logged in');
+      }
+
+      String? existingShopId = await getUserShopId();
+      if (existingShopId != null && existingShopId.isNotEmpty) {
+        return existingShopId;
+      }
+
+      // Generate a new shop ID if user doesn't have one
+      String newShopId = 'shop_${_auth.currentUser!.uid}_${DateTime.now().millisecondsSinceEpoch}';
+      
+      // Update user's shop ID
+      await _firestore.collection('pharmacies').doc(_auth.currentUser!.uid).update({
+        'shopId': newShopId,
+        'updatedAt': DateTime.now().toIso8601String()
+      });
+
+      return newShopId;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // Product-related methods
 
   // Add a new product to Firestore
   Future<String> addProduct(Map<String, dynamic> productData) async {
     try {
+      // Check if user is logged in
+      if (_auth.currentUser == null) {
+        throw Exception('User not logged in');
+      }
+
       // Add user email to product data
-      if (_auth.currentUser != null) {
-        productData['userEmail'] = _auth.currentUser!.email;
-        
-        // Get user data to retrieve the shop ID
-        DocumentSnapshot userData = await _firestore.collection('pharmacies').doc(_auth.currentUser!.uid).get();
-        if (userData.exists) {
-          Map<String, dynamic> userDataMap = userData.data() as Map<String, dynamic>;
-          // Add shop ID to product data if available
-          if (userDataMap.containsKey('shopId') && userDataMap['shopId'] != null && userDataMap['shopId'] != '') {
-            productData['shopId'] = userDataMap['shopId'];
-          }
+      productData['userEmail'] = _auth.currentUser!.email;
+      
+      // Add timestamps
+      productData['createdAt'] = DateTime.now().toIso8601String();
+      productData['updatedAt'] = DateTime.now().toIso8601String();
+      
+      // Get user data to retrieve the shop ID
+      DocumentSnapshot userData = await _firestore.collection('pharmacies').doc(_auth.currentUser!.uid).get();
+      if (userData.exists) {
+        Map<String, dynamic> userDataMap = userData.data() as Map<String, dynamic>;
+        // Add shop ID to product data if available
+        if (userDataMap.containsKey('shopId') && userDataMap['shopId'] != null && userDataMap['shopId'] != '') {
+          productData['shopId'] = userDataMap['shopId'];
+        } else {
+          throw Exception('Shop ID not found. Please set up your shop profile first.');
         }
+      } else {
+        throw Exception('User profile not found. Please complete your registration.');
       }
 
       DocumentReference docRef =
           await _firestore.collection('products').add(productData);
+      return docRef.id;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Add a new medicine/product with shop ID validation
+  Future<String> addMedicine(Map<String, dynamic> medicineData) async {
+    try {
+      // Ensure user has a shop ID
+      String shopId = await ensureUserHasShopId();
+      
+      // Add medicine-specific fields
+      medicineData['type'] = 'medicine';
+      medicineData['shopId'] = shopId;
+      medicineData['userEmail'] = _auth.currentUser!.email;
+      medicineData['createdAt'] = DateTime.now().toIso8601String();
+      medicineData['updatedAt'] = DateTime.now().toIso8601String();
+      
+      // Validate required medicine fields
+      List<String> requiredFields = ['name', 'price', 'quantity'];
+      for (String field in requiredFields) {
+        if (!medicineData.containsKey(field) || medicineData[field] == null || medicineData[field].toString().isEmpty) {
+          throw Exception('Missing required field: $field');
+        }
+      }
+
+      DocumentReference docRef = await _firestore.collection('products').add(medicineData);
       return docRef.id;
     } catch (e) {
       rethrow;
