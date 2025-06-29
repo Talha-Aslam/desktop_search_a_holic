@@ -13,36 +13,8 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _notificationsEnabled = true;
-  bool _soundEnabled = true;
   bool _autoBackupEnabled = true;
-  String _selectedLanguage = 'English';
-  String _selectedCurrency = 'USD';
-  String _selectedDateFormat = 'MM/DD/YYYY';
-  double _fontSize = 14.0;
-
-  final List<String> _languages = [
-    'English',
-    'Spanish',
-    'French',
-    'German',
-    'Chinese',
-    'Japanese'
-  ];
-  final List<String> _currencies = [
-    'USD',
-    'EUR',
-    'GBP',
-    'JPY',
-    'CAD',
-    'AUD',
-    'INR'
-  ];
-  final List<String> _dateFormats = [
-    'MM/DD/YYYY',
-    'DD/MM/YYYY',
-    'YYYY-MM-DD',
-    'DD-MMM-YYYY'
-  ];
+  double _fontSize = 13.0;
 
   final List<Map<String, dynamic>> _presetThemes = [
     {
@@ -80,33 +52,36 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
-    _loadSettings();
+    // Initialize font size from theme provider with clamping
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    _fontSize = themeProvider.fontSize.clamp(10.0, 17.0);
+    // Load settings after widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSettings();
+    });
   }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
 
     setState(() {
       _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
-      _soundEnabled = prefs.getBool('sound_enabled') ?? true;
       _autoBackupEnabled = prefs.getBool('auto_backup_enabled') ?? true;
-      _selectedLanguage = prefs.getString('language') ?? 'English';
-      _selectedCurrency = prefs.getString('currency') ?? 'USD';
-      _selectedDateFormat = prefs.getString('date_format') ?? 'MM/DD/YYYY';
-      _fontSize = prefs.getDouble('font_size') ?? 14.0;
+      // Clamp font size to the valid range (10-17)
+      _fontSize = themeProvider.fontSize.clamp(10.0, 17.0);
     });
   }
 
   Future<void> _saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
 
     await prefs.setBool('notifications_enabled', _notificationsEnabled);
-    await prefs.setBool('sound_enabled', _soundEnabled);
     await prefs.setBool('auto_backup_enabled', _autoBackupEnabled);
-    await prefs.setString('language', _selectedLanguage);
-    await prefs.setString('currency', _selectedCurrency);
-    await prefs.setString('date_format', _selectedDateFormat);
-    await prefs.setDouble('font_size', _fontSize);
+
+    // Update font size through theme provider
+    await themeProvider.setFontSize(_fontSize);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Settings saved successfully')),
@@ -115,18 +90,17 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _resetSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
 
     setState(() {
       _notificationsEnabled = true;
-      _soundEnabled = true;
       _autoBackupEnabled = true;
-      _selectedLanguage = 'English';
-      _selectedCurrency = 'USD';
-      _selectedDateFormat = 'MM/DD/YYYY';
-      _fontSize = 14.0;
+      _fontSize = 13.0;
     });
 
     await prefs.clear();
+    // Reset font size in theme provider
+    await themeProvider.setFontSize(13.0);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Settings reset to defaults')),
@@ -345,7 +319,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                                 const SizedBox(width: 16),
                                 Text(
-                                  'Font Size: ${_fontSize.toInt()}',
+                                  'Font Size: ${_fontSize.clamp(10.0, 17.0).toInt()}',
                                   style: TextStyle(
                                     color: themeProvider.textColor,
                                     fontWeight: FontWeight.bold,
@@ -355,18 +329,23 @@ class _SettingsPageState extends State<SettingsPage> {
                             ),
                           ),
                           Slider(
-                            value: _fontSize,
-                            min: 12,
-                            max: 20,
-                            divisions: 8,
+                            value: _fontSize.clamp(10.0, 17.0),
+                            min: 10,
+                            max: 17,
+                            divisions: 7,
                             activeColor: themeProvider.gradientColors[0],
                             inactiveColor: themeProvider.gradientColors[0]
                                 .withOpacity(0.3),
-                            label: _fontSize.toInt().toString(),
+                            label:
+                                _fontSize.clamp(10.0, 17.0).toInt().toString(),
                             onChanged: (value) {
                               setState(() {
                                 _fontSize = value;
                               });
+                              // Debug: print the font size change
+                              print('Font size changed to: $value');
+                              // Immediately apply font size change
+                              themeProvider.setFontSize(value);
                             },
                           ),
 
@@ -381,184 +360,22 @@ class _SettingsPageState extends State<SettingsPage> {
                                   : Colors.grey.shade200,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Text(
-                              'This is a preview of your selected text size',
-                              style: TextStyle(
-                                fontSize: _fontSize,
-                                color: themeProvider.textColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // General Settings Section
-                  _buildSectionHeader(context, 'General Settings'),
-                  Card(
-                    color: themeProvider.cardBackgroundColor,
-                    elevation: 2,
-                    margin: const EdgeInsets.only(bottom: 24),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Language Selector
-                          ListTile(
-                            leading: Icon(
-                              Icons.language,
-                              color: themeProvider.gradientColors[0],
-                            ),
-                            title: Text(
-                              'Language',
-                              style: TextStyle(
-                                color: themeProvider.textColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              'Select your preferred language',
-                              style: TextStyle(
-                                color: themeProvider.textColor.withOpacity(0.7),
-                              ),
-                            ),
-                            trailing: DropdownButton<String>(
-                              value: _selectedLanguage,
-                              dropdownColor: themeProvider.cardBackgroundColor,
-                              icon: Icon(
-                                Icons.arrow_drop_down,
-                                color: themeProvider.textColor,
-                              ),
-                              style: TextStyle(
-                                color: themeProvider.textColor,
-                                fontSize: 16,
-                              ),
-                              underline: Container(
-                                height: 0,
-                              ),
-                              onChanged: (String? newValue) {
-                                if (newValue != null) {
-                                  setState(() {
-                                    _selectedLanguage = newValue;
-                                  });
-                                }
-                              },
-                              items: _languages.map<DropdownMenuItem<String>>(
-                                  (String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-
-                          const Divider(),
-
-                          // Currency Selector
-                          ListTile(
-                            leading: Icon(
-                              Icons.attach_money,
-                              color: themeProvider.gradientColors[0],
-                            ),
-                            title: Text(
-                              'Currency',
-                              style: TextStyle(
-                                color: themeProvider.textColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              'Select your preferred currency',
-                              style: TextStyle(
-                                color: themeProvider.textColor.withOpacity(0.7),
-                              ),
-                            ),
-                            trailing: DropdownButton<String>(
-                              value: _selectedCurrency,
-                              dropdownColor: themeProvider.cardBackgroundColor,
-                              icon: Icon(
-                                Icons.arrow_drop_down,
-                                color: themeProvider.textColor,
-                              ),
-                              style: TextStyle(
-                                color: themeProvider.textColor,
-                                fontSize: 16,
-                              ),
-                              underline: Container(
-                                height: 0,
-                              ),
-                              onChanged: (String? newValue) {
-                                if (newValue != null) {
-                                  setState(() {
-                                    _selectedCurrency = newValue;
-                                  });
-                                }
-                              },
-                              items: _currencies.map<DropdownMenuItem<String>>(
-                                  (String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-
-                          const Divider(),
-
-                          // Date Format Selector
-                          ListTile(
-                            leading: Icon(
-                              Icons.date_range,
-                              color: themeProvider.gradientColors[0],
-                            ),
-                            title: Text(
-                              'Date Format',
-                              style: TextStyle(
-                                color: themeProvider.textColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              'Select your preferred date format',
-                              style: TextStyle(
-                                color: themeProvider.textColor.withOpacity(0.7),
-                              ),
-                            ),
-                            trailing: DropdownButton<String>(
-                              value: _selectedDateFormat,
-                              dropdownColor: themeProvider.cardBackgroundColor,
-                              icon: Icon(
-                                Icons.arrow_drop_down,
-                                color: themeProvider.textColor,
-                              ),
-                              style: TextStyle(
-                                color: themeProvider.textColor,
-                                fontSize: 16,
-                              ),
-                              underline: Container(
-                                height: 0,
-                              ),
-                              onChanged: (String? newValue) {
-                                if (newValue != null) {
-                                  setState(() {
-                                    _selectedDateFormat = newValue;
-                                  });
-                                }
-                              },
-                              items: _dateFormats.map<DropdownMenuItem<String>>(
-                                  (String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                );
-                              }).toList(),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'This is a preview of your selected text size',
+                                  style: themeProvider.bodyTextStyle,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Current font size: ${themeProvider.fontSize.toStringAsFixed(1)}px',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: themeProvider.textColor
+                                        .withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -607,40 +424,6 @@ class _SettingsPageState extends State<SettingsPage> {
                               onChanged: (value) {
                                 setState(() {
                                   _notificationsEnabled = value;
-                                });
-                              },
-                            ),
-                          ),
-
-                          const Divider(),
-
-                          // Sound Toggle
-                          ListTile(
-                            leading: Icon(
-                              Icons.volume_up,
-                              color: themeProvider.gradientColors[0],
-                            ),
-                            title: Text(
-                              'Sound Effects',
-                              style: TextStyle(
-                                color: themeProvider.textColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              _soundEnabled
-                                  ? 'Sound effects are enabled'
-                                  : 'Sound effects are disabled',
-                              style: TextStyle(
-                                color: themeProvider.textColor.withOpacity(0.7),
-                              ),
-                            ),
-                            trailing: Switch(
-                              value: _soundEnabled,
-                              activeColor: themeProvider.gradientColors[0],
-                              onChanged: (value) {
-                                setState(() {
-                                  _soundEnabled = value;
                                 });
                               },
                             ),

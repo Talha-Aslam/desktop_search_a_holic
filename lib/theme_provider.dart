@@ -5,6 +5,10 @@ class ThemeProvider extends ChangeNotifier {
   bool _isDarkMode = false;
   bool get isDarkMode => _isDarkMode;
 
+  // Font size configuration
+  double _fontSize = 13.0;
+  double get fontSize => _fontSize;
+
   // Custom gradient colors that can be changed by user
   List<Color> _customGradientColors = [
     const Color(0xFF2196F3), // Default Blue
@@ -43,6 +47,40 @@ class ThemeProvider extends ChangeNotifier {
   Color get borderColor =>
       _isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300;
 
+  // Text style helpers based on font size
+  TextStyle get bodyTextStyle => TextStyle(
+        fontSize: _fontSize,
+        color: textColor,
+      );
+
+  TextStyle get bodyTextStyleBold => TextStyle(
+        fontSize: _fontSize,
+        color: textColor,
+        fontWeight: FontWeight.bold,
+      );
+
+  TextStyle get titleTextStyle => TextStyle(
+        fontSize: _fontSize + 2,
+        color: textColor,
+        fontWeight: FontWeight.bold,
+      );
+
+  TextStyle get subtitleTextStyle => TextStyle(
+        fontSize: _fontSize - 1,
+        color: textColor.withOpacity(0.7),
+      );
+
+  TextStyle get captionTextStyle => TextStyle(
+        fontSize: _fontSize - 2,
+        color: textColor.withOpacity(0.6),
+      );
+
+  TextStyle get largeTextStyle => TextStyle(
+        fontSize: _fontSize + 4,
+        color: textColor,
+        fontWeight: FontWeight.bold,
+      );
+
   ThemeProvider() {
     _loadThemePreference();
   }
@@ -50,6 +88,15 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> _loadThemePreference() async {
     final prefs = await SharedPreferences.getInstance();
     _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+
+    // Load font size and clamp it to the new range (10-17)
+    double savedFontSize = prefs.getDouble('fontSize') ?? 13.0;
+    _fontSize = savedFontSize.clamp(10.0, 17.0);
+
+    // If the font size was clamped, save the new value
+    if (savedFontSize != _fontSize) {
+      await prefs.setDouble('fontSize', _fontSize);
+    }
 
     // Load custom colors if they exist
     final primaryColorValue = prefs.getInt('primaryColor');
@@ -83,6 +130,16 @@ class ThemeProvider extends ChangeNotifier {
 
       notifyListeners();
     }
+  }
+
+  Future<void> setFontSize(double size) async {
+    print('ThemeProvider: Setting font size to $size');
+    // Clamp the font size to the valid range (10-17)
+    _fontSize = size.clamp(10.0, 17.0);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('fontSize', _fontSize);
+    print('ThemeProvider: Font size saved and notifying listeners');
+    notifyListeners();
   }
 
   ThemeData get themeData {

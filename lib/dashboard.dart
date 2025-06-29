@@ -122,21 +122,14 @@ class _DashboardState extends State<Dashboard> {
                                 const SizedBox(width: 16),
                                 Text(
                                   'Welcome to the Dashboard',
-                                  style: TextStyle(
-                                    color: themeProvider.textColor,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 24,
-                                  ),
+                                  style: themeProvider.largeTextStyle,
                                 ),
                               ],
                             ),
                             const SizedBox(height: 16.0),
                             Text(
                               'Here you can manage your products, view reports, and more.',
-                              style: TextStyle(
-                                color: themeProvider.textColor,
-                                fontSize: 16,
-                              ),
+                              style: themeProvider.bodyTextStyle,
                             ),
                             const SizedBox(height: 12),
                             ElevatedButton.icon(
@@ -165,10 +158,8 @@ class _DashboardState extends State<Dashboard> {
                     // Statistics Row
                     Text(
                       'Statistics',
-                      style: TextStyle(
-                        color: themeProvider.textColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                      style: themeProvider.titleTextStyle.copyWith(
+                        fontSize: themeProvider.fontSize + 6,
                       ),
                     ),
                     const SizedBox(height: 16), // Statistics Cards Grid
@@ -224,10 +215,8 @@ class _DashboardState extends State<Dashboard> {
                     // Recent Items
                     Text(
                       'Recent Activities',
-                      style: TextStyle(
-                        color: themeProvider.textColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                      style: themeProvider.titleTextStyle.copyWith(
+                        fontSize: themeProvider.fontSize + 6,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -253,16 +242,11 @@ class _DashboardState extends State<Dashboard> {
                         ),
                         title: Text(
                           'New Product Added',
-                          style: TextStyle(
-                            color: themeProvider.textColor,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: themeProvider.bodyTextStyleBold,
                         ),
                         subtitle: Text(
                           'Paracetamol 500mg - 10 minutes ago',
-                          style: TextStyle(
-                            color: themeProvider.textColor.withOpacity(0.7),
-                          ),
+                          style: themeProvider.subtitleTextStyle,
                         ),
                         trailing: Icon(
                           Icons.arrow_forward_ios,
@@ -290,20 +274,14 @@ class _DashboardState extends State<Dashboard> {
                               const SizedBox(height: 16),
                               Text(
                                 'No recent activities',
-                                style: TextStyle(
-                                  color:
-                                      themeProvider.textColor.withOpacity(0.7),
-                                  fontSize: 16,
+                                style: themeProvider.bodyTextStyle.copyWith(
+                                  fontSize: themeProvider.fontSize + 2,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 'Start using the app to see activities here',
-                                style: TextStyle(
-                                  color:
-                                      themeProvider.textColor.withOpacity(0.5),
-                                  fontSize: 14,
-                                ),
+                                style: themeProvider.bodyTextStyle,
                               ),
                             ],
                           ),
@@ -329,17 +307,11 @@ class _DashboardState extends State<Dashboard> {
                                   ),
                                   title: Text(
                                     activity['title'],
-                                    style: TextStyle(
-                                      color: themeProvider.textColor,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    style: themeProvider.bodyTextStyleBold,
                                   ),
                                   subtitle: Text(
                                     activity['subtitle'],
-                                    style: TextStyle(
-                                      color: themeProvider.textColor
-                                          .withOpacity(0.7),
-                                    ),
+                                    style: themeProvider.subtitleTextStyle,
                                   ),
                                   trailing: Icon(
                                     Icons.arrow_forward_ios,
@@ -381,10 +353,7 @@ class _DashboardState extends State<Dashboard> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    color: themeProvider.textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: themeProvider.bodyTextStyleBold,
                 ),
                 Icon(
                   icon,
@@ -397,7 +366,7 @@ class _DashboardState extends State<Dashboard> {
             Text(
               value,
               style: TextStyle(
-                fontSize: 28,
+                fontSize: themeProvider.fontSize + 14,
                 fontWeight: FontWeight.bold,
                 color: themeProvider.textColor,
               ),

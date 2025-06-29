@@ -388,11 +388,7 @@ class _POSState extends State<POS> {
         children: [
           Text(
             'Advanced Search Options',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: themeProvider.textColor,
-            ),
+            style: themeProvider.titleTextStyle,
           ),
           const SizedBox(height: 12),
           Row(
@@ -404,10 +400,7 @@ class _POSState extends State<POS> {
                   children: [
                     Text(
                       'Category',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: themeProvider.textColor,
-                      ),
+                      style: themeProvider.bodyTextStyle,
                     ),
                     const SizedBox(height: 4),
                     Container(
@@ -732,16 +725,12 @@ class _POSState extends State<POS> {
                                           child: TextField(
                                             controller: _searchController,
                                             onChanged: _searchProducts,
-                                            style: TextStyle(
-                                              color: themeProvider.textColor,
-                                            ),
+                                            style: themeProvider.bodyTextStyle,
                                             decoration: InputDecoration(
                                               hintText:
                                                   'Search medicines and products...',
-                                              hintStyle: TextStyle(
-                                                color: themeProvider.textColor
-                                                    .withOpacity(0.6),
-                                              ),
+                                              hintStyle: themeProvider
+                                                  .subtitleTextStyle,
                                               border: InputBorder.none,
                                               contentPadding:
                                                   const EdgeInsets.symmetric(
@@ -820,10 +809,8 @@ class _POSState extends State<POS> {
                                             ? Center(
                                                 child: Text(
                                                   'No products found',
-                                                  style: TextStyle(
-                                                    color:
-                                                        themeProvider.textColor,
-                                                  ),
+                                                  style: themeProvider
+                                                      .bodyTextStyle,
                                                 ),
                                               )
                                             : GridView.builder(
@@ -879,11 +866,7 @@ class _POSState extends State<POS> {
                                     children: [
                                       Text(
                                         'Customer Information',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: themeProvider.textColor,
-                                        ),
+                                        style: themeProvider.titleTextStyle,
                                       ),
                                       const SizedBox(height: 8),
                                       _buildTextField(
@@ -1216,11 +1199,7 @@ class _POSState extends State<POS> {
                     // Product name
                     Text(
                       product['name'],
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: themeProvider.textColor,
-                      ),
+                      style: themeProvider.titleTextStyle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1237,7 +1216,7 @@ class _POSState extends State<POS> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: themeProvider.gradientColors[0],
-                              fontSize: 18,
+                              fontSize: themeProvider.fontSize + 4,
                             ),
                           ),
                         ),
@@ -1365,7 +1344,7 @@ class _POSState extends State<POS> {
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: themeProvider.textColor,
-                    fontSize: 13,
+                    fontSize: themeProvider.fontSize - 1,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1375,7 +1354,7 @@ class _POSState extends State<POS> {
                   '\$${item['price']} × ${item['quantity']} = \$${itemTotal.toStringAsFixed(2)}',
                   style: TextStyle(
                     color: themeProvider.textColor.withOpacity(0.7),
-                    fontSize: 11,
+                    fontSize: themeProvider.fontSize - 3,
                   ),
                 ),
               ],
@@ -1412,10 +1391,10 @@ class _POSState extends State<POS> {
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       onChanged: onChanged,
-      style: TextStyle(color: themeProvider.textColor),
+      style: themeProvider.bodyTextStyle,
       decoration: InputDecoration(
         labelText: labelText,
-        labelStyle: TextStyle(color: themeProvider.textColor.withOpacity(0.7)),
+        labelStyle: themeProvider.subtitleTextStyle,
         prefixIcon: Icon(icon, color: themeProvider.gradientColors[0]),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -1450,17 +1429,16 @@ class _POSState extends State<POS> {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              fontSize: isTotal ? 16 : 14,
-              color: themeProvider.textColor,
-            ),
+            style: isTotal
+                ? themeProvider.titleTextStyle
+                : themeProvider.bodyTextStyle,
           ),
           Text(
             isDiscount ? '-\$$value' : '\$$value',
             style: TextStyle(
+              fontSize:
+                  isTotal ? themeProvider.fontSize + 2 : themeProvider.fontSize,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              fontSize: isTotal ? 16 : 14,
               color: isDiscount
                   ? Colors.red
                   : (isTotal
