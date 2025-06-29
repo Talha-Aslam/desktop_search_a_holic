@@ -32,6 +32,7 @@ class _DashboardState extends State<Dashboard> {
 
   Future<void> _loadDashboardData() async {
     try {
+      if (!mounted) return;
       setState(() {
         _isLoading = true;
       });
@@ -42,6 +43,7 @@ class _DashboardState extends State<Dashboard> {
         _activityService.getRecentActivities(),
       ]);
 
+      if (!mounted) return;
       setState(() {
         _salesStats = results[0] as Map<String, dynamic>;
         _recentActivities = results[1] as List<Map<String, dynamic>>;
@@ -49,6 +51,7 @@ class _DashboardState extends State<Dashboard> {
       });
     } catch (e) {
       print('Error loading dashboard data: $e');
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });

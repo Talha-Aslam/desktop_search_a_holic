@@ -10,6 +10,7 @@ class AutoBackupService {
   AutoBackupService._internal();
 
   Timer? _backupTimer;
+  bool _isDisposed = false;
   final BackupHistoryService _historyService = BackupHistoryService();
 
   // Default backup interval (24 hours)
@@ -32,6 +33,8 @@ class AutoBackupService {
 
   /// Schedule the next automatic backup
   Future<void> _scheduleNextBackup() async {
+    if (_isDisposed) return; // Exit if service is disposed
+
     try {
       // Cancel existing timer if any
       _backupTimer?.cancel();
@@ -59,18 +62,26 @@ class AutoBackupService {
 
       // Schedule the backup
       _backupTimer = Timer(timeUntilNextBackup, () async {
+        if (_isDisposed) return; // Check again before executing
         await _performAutomaticBackup();
-        await _scheduleNextBackup(); // Schedule the next one
+        if (!_isDisposed) {
+          // Only schedule next if not disposed
+          await _scheduleNextBackup(); // Schedule the next one
+        }
       });
 
       print(
           'Next automatic backup scheduled in: ${timeUntilNextBackup.inHours}h ${timeUntilNextBackup.inMinutes % 60}m');
     } catch (e) {
       print('Error scheduling backup: $e');
-      // Retry in 1 hour if there's an error
-      _backupTimer = Timer(const Duration(hours: 1), () async {
-        await _scheduleNextBackup();
-      });
+      if (!_isDisposed) {
+        // Retry in 1 hour if there's an error and not disposed
+        _backupTimer = Timer(const Duration(hours: 1), () async {
+          if (!_isDisposed) {
+            await _scheduleNextBackup();
+          }
+        });
+      }
     }
   }
 
@@ -288,6 +299,7 @@ class AutoBackupService {
 
   /// Dispose of the service and cleanup resources
   void dispose() {
+    _isDisposed = true;
     _backupTimer?.cancel();
     _backupTimer = null;
   }

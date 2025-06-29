@@ -59,7 +59,7 @@ class _SidebarState extends State<Sidebar> {
       child: Column(
         children: [
           Container(
-            height: 180,
+            height: 140, // Reduced from 180 to 140
             width: double.infinity,
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -71,27 +71,27 @@ class _SidebarState extends State<Sidebar> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 const CircleAvatar(
-                  radius: 40,
+                  radius: 30, // Reduced from 40 to 30
                   backgroundImage: AssetImage('images/logo.png'),
                   backgroundColor: Colors.white,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 const Text(
-                  'Search-A-Holic',
+                  'HealSearch',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 16, // Reduced from 20 to 16
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 const Text(
                   'Desktop Application',
                   style: TextStyle(
                     color: Colors.white70,
-                    fontSize: 14,
+                    fontSize: 12, // Reduced from 14 to 12
                   ),
                 ),
               ],

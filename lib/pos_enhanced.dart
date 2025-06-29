@@ -72,7 +72,8 @@ class _POSState extends State<POS> {
   void _calculateTotal() {
     double subtotal = 0;
     for (var item in cart) {
-      subtotal += item['price'] * item['quantity'];
+      subtotal += (item['price'] as num).toDouble() *
+          (item['quantity'] as num).toDouble();
     }
 
     double discount = double.tryParse(_discountController.text) ?? 0;
@@ -313,7 +314,8 @@ class _POSState extends State<POS> {
                   'name': item['name'],
                   'price': item['price'],
                   'quantity': item['quantity'],
-                  'subtotal': item['price'] * item['quantity'],
+                  'subtotal': (item['price'] as num).toDouble() *
+                      (item['quantity'] as num).toDouble(),
                 })
             .toList(),
         'subtotal': _subtotal,
@@ -325,7 +327,7 @@ class _POSState extends State<POS> {
       };
 
       // Save to Firestore using SalesService
-      String orderID = await _salesService.addSale(orderData);
+      await _salesService.addSale(orderData);
 
       // Update product quantities in inventory
       for (var item in cart) {
@@ -678,7 +680,10 @@ class _POSState extends State<POS> {
       ),
       body: Row(
         children: [
-          const Sidebar(),
+          SizedBox(
+            width: 220, // Reduced from default ~280px to 220px
+            child: const Sidebar(),
+          ),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -822,12 +827,19 @@ class _POSState extends State<POS> {
                                                 ),
                                               )
                                             : GridView.builder(
-                                                padding:
-                                                    const EdgeInsets.all(12),
+                                                padding: EdgeInsets.all(
+                                                    MediaQuery.of(context)
+                                                                .size
+                                                                .width >
+                                                            1400
+                                                        ? 16
+                                                        : 12),
                                                 gridDelegate:
-                                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                                  crossAxisCount: 3,
-                                                  childAspectRatio: 1.3,
+                                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                                  crossAxisCount:
+                                                      2, // Fixed to 2 columns for better readability
+                                                  childAspectRatio:
+                                                      1.2, // Adjusted for better card proportions
                                                   crossAxisSpacing: 12,
                                                   mainAxisSpacing: 12,
                                                 ),
@@ -860,7 +872,7 @@ class _POSState extends State<POS> {
                               children: [
                                 // Customer info
                                 Padding(
-                                  padding: const EdgeInsets.all(16),
+                                  padding: const EdgeInsets.all(12),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -869,18 +881,18 @@ class _POSState extends State<POS> {
                                         'Customer Information',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 18,
+                                          fontSize: 16,
                                           color: themeProvider.textColor,
                                         ),
                                       ),
-                                      const SizedBox(height: 12),
+                                      const SizedBox(height: 8),
                                       _buildTextField(
                                         controller: _customerNameController,
                                         labelText: 'Customer Name (Optional)',
                                         icon: Icons.person,
                                         themeProvider: themeProvider,
                                       ),
-                                      const SizedBox(height: 8),
+                                      const SizedBox(height: 6),
                                       _buildTextField(
                                         controller: _customerPhoneController,
                                         labelText: 'Phone Number (Optional)',
@@ -899,19 +911,20 @@ class _POSState extends State<POS> {
                                   child: Column(
                                     children: [
                                       Padding(
-                                        padding: const EdgeInsets.all(16),
+                                        padding: const EdgeInsets.all(12),
                                         child: Row(
                                           children: [
                                             Icon(
                                               Icons.shopping_cart,
                                               color: themeProvider.iconColor,
+                                              size: 20,
                                             ),
-                                            const SizedBox(width: 8),
+                                            const SizedBox(width: 6),
                                             Text(
                                               'Cart Items',
                                               style: TextStyle(
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 18,
+                                                fontSize: 16,
                                                 color: themeProvider.textColor,
                                               ),
                                             ),
@@ -995,11 +1008,11 @@ class _POSState extends State<POS> {
                                               )
                                             : ListView.separated(
                                                 padding:
-                                                    const EdgeInsets.all(16),
+                                                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                                 itemCount: cart.length,
                                                 separatorBuilder:
                                                     (context, index) =>
-                                                        const Divider(),
+                                                        const Divider(height: 8),
                                                 itemBuilder: (context, index) {
                                                   return _buildCartItem(
                                                       index, themeProvider);
@@ -1012,7 +1025,7 @@ class _POSState extends State<POS> {
 
                                 // Order summary and checkout
                                 Container(
-                                  padding: const EdgeInsets.all(16),
+                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: themeProvider.isDarkMode
                                         ? Colors.grey.shade800
@@ -1058,7 +1071,7 @@ class _POSState extends State<POS> {
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 12),
+                                      const SizedBox(height: 8),
 
                                       // Order summary
                                       _buildSummaryRow(
@@ -1081,7 +1094,7 @@ class _POSState extends State<POS> {
                                           themeProvider,
                                           isTotal: true),
 
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 12),
 
                                       // Checkout button
                                       SizedBox(
@@ -1155,103 +1168,118 @@ class _POSState extends State<POS> {
         onTap: () => _addToCart(product),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
             children: [
-              // Category badge and icon in a row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Icon(
-                    _getCategoryIcon(product['category']),
-                    size: 24,
-                    color: themeProvider.gradientColors[0],
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _getCategoryColor(product['category']),
-                      borderRadius: BorderRadius.circular(8),
+              // Top content: Category badge, name, price and stock
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Category badge and icon in a row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Icon(
+                          _getCategoryIcon(product['category']),
+                          size: 24,
+                          color: themeProvider.gradientColors[0],
+                        ),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _getCategoryColor(product['category']),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              product['category'],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      product['category'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
+
+                    const SizedBox(height: 8),
+
+                    // Product name
+                    Text(
+                      product['name'],
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: themeProvider.textColor,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
-              ),
 
-              const SizedBox(height: 4),
+                    const SizedBox(height: 8),
 
-              // Product name
-              Text(
-                product['name'],
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: themeProvider.textColor,
+                    // Price and stock
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '\$${product['price']}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: themeProvider.gradientColors[0],
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _getStockColor(product['quantity']),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Stock: ${product['quantity']}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
 
-              const SizedBox(height: 4),
-
-              // Price and stock
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '\$${product['price']}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: themeProvider.gradientColors[0],
-                      fontSize: 14,
-                    ),
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _getStockColor(product['quantity']),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Stock: ${product['quantity']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // Add to cart button
-              const SizedBox(height: 4),
+              // Add to cart button - positioned at the bottom
               SizedBox(
                 width: double.infinity,
-                height: 28,
+                height: 36,
                 child: ElevatedButton.icon(
                   onPressed: (product['quantity'] > 0)
                       ? () => _addToCart(product)
                       : null,
-                  icon: const Icon(Icons.add_shopping_cart, size: 12),
-                  label: const Text('Add', style: TextStyle(fontSize: 12)),
+                  icon: const Icon(Icons.add_shopping_cart, size: 16),
+                  label:
+                      const Text('Add to Cart', style: TextStyle(fontSize: 14)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: themeProvider.gradientColors[0],
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
@@ -1265,82 +1293,105 @@ class _POSState extends State<POS> {
 
   Widget _buildCartItem(int index, ThemeProvider themeProvider) {
     final item = cart[index];
-    final double itemTotal = item['price'] * item['quantity'];
+    final double itemTotal =
+        (item['price'] is int ? item['price'].toDouble() : item['price']) *
+            (item['quantity'] is int
+                ? item['quantity'].toDouble()
+                : item['quantity']);
 
-    return Row(
-      children: [
-        // Quantity controls
-        Container(
-          decoration: BoxDecoration(
-            color: themeProvider.isDarkMode
-                ? Colors.grey.shade700
-                : Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove, size: 16),
-                onPressed: () =>
-                    _updateCartItemQuantity(index, item['quantity'] - 1),
-                splashRadius: 20,
-                tooltip: 'Decrease quantity',
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  item['quantity'].toString(),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: themeProvider.textColor,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          // Quantity controls
+          Container(
+            decoration: BoxDecoration(
+              color: themeProvider.isDarkMode
+                  ? Colors.grey.shade700
+                  : Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.remove, size: 14),
+                  onPressed: () =>
+                      _updateCartItemQuantity(index, item['quantity'] - 1),
+                  splashRadius: 14,
+                  tooltip: 'Decrease quantity',
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
                   ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add, size: 16),
-                onPressed: () =>
-                    _updateCartItemQuantity(index, item['quantity'] + 1),
-                splashRadius: 20,
-                tooltip: 'Increase quantity',
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-
-        // Item details
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                item['name'],
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: themeProvider.textColor,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Text(
+                    item['quantity'].toString(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: themeProvider.textColor,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                '\$${item['price']} × ${item['quantity']} = \$${itemTotal.toStringAsFixed(2)}',
-                style: TextStyle(
-                  color: themeProvider.textColor.withOpacity(0.7),
-                  fontSize: 12,
+                IconButton(
+                  icon: const Icon(Icons.add, size: 14),
+                  onPressed: () =>
+                      _updateCartItemQuantity(index, item['quantity'] + 1),
+                  splashRadius: 14,
+                  tooltip: 'Increase quantity',
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          const SizedBox(width: 8),
 
-        // Delete button
-        IconButton(
-          icon: const Icon(Icons.delete_outline, color: Colors.red),
-          onPressed: () => _removeFromCart(index),
-          splashRadius: 20,
-          tooltip: 'Remove item',
-        ),
-      ],
+          // Item details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  item['name'],
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: themeProvider.textColor,
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),                                const SizedBox(height: 1),
+                Text(
+                  '\$${item['price']} × ${item['quantity']} = \$${itemTotal.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: themeProvider.textColor.withOpacity(0.7),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Delete button
+          IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 16),
+            onPressed: () => _removeFromCart(index),
+            splashRadius: 14,
+            tooltip: 'Remove item',
+            constraints: const BoxConstraints(
+              minWidth: 28,
+              minHeight: 28,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

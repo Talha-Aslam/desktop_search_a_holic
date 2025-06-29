@@ -37,6 +37,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
   }
 
   void _addBotMessage(String message) {
+    if (!mounted) return; // Check if widget is still mounted
     setState(() {
       _messages.add(
         ChatMessage(
@@ -67,10 +68,13 @@ class _ChatBotPageState extends State<ChatBotPage> {
 
       // Simulate typing delay before bot response
       Future.delayed(const Duration(milliseconds: 1500), () {
-        setState(() {
-          _isTyping = false;
-        });
-        _generateBotResponse(userMessage);
+        if (mounted) {
+          // Check if widget is still mounted
+          setState(() {
+            _isTyping = false;
+          });
+          _generateBotResponse(userMessage);
+        }
       });
     }
   }
