@@ -26,28 +26,47 @@ class _ProductState extends State<Product> {
 
   Future<void> _loadProductsFromFirestore() async {
     try {
+      if (!mounted) return; // Check mounted before starting
+
       setState(() {
         _isLoading = true;
       });
 
+      print('🔄 Loading products from Firestore...');
       List<Map<String, dynamic>> loadedProducts =
           await _firebaseService.getProducts();
 
+      if (!mounted) return; // Check mounted after async operation
+
       // Debug logging
-      print('Products loaded: ${loadedProducts.length}');
+      print('Products loaded from Firestore: ${loadedProducts.length}');
       for (var product in loadedProducts) {
-        print('Product: ${product['name']}, ID: ${product['id']}');
+        print(
+            'Product: ${product['name']}, ID: ${product['id']}, Created: ${product['createdAt']}');
       }
 
       setState(() {
         products = loadedProducts;
-        filteredProducts = loadedProducts;
+        // Apply current search filter to new products
+        if (_searchController.text.isEmpty) {
+          filteredProducts = loadedProducts;
+        } else {
+          _searchProducts(_searchController.text);
+        }
         _isLoading = false;
       });
+
+      print(
+          'Products state updated - total: ${products.length}, filtered: ${filteredProducts.length}');
+      print('🔄 _loadProductsFromFirestore completed successfully');
     } catch (e) {
+      if (!mounted) return; // Check mounted before setState
+
       setState(() {
         _isLoading = false;
       });
+
+      print('❌ Error loading products from Firestore: $e');
 
       // Show error to user
       if (mounted) {
@@ -155,7 +174,24 @@ class _ProductState extends State<Product> {
   }
 
   Future<void> _refreshProducts() async {
-    await _loadProductsFromFirestore();
+    if (!mounted) return; // Check mounted before refresh
+    print('_refreshProducts called - starting refresh...');
+
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      await _loadProductsFromFirestore();
+      print('_refreshProducts completed successfully');
+    } catch (e) {
+      print('Error in _refreshProducts: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -186,10 +222,18 @@ class _ProductState extends State<Product> {
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () async {
+              print('Navigating to add product page...');
               final result = await Navigator.pushNamed(context, '/addProduct');
+              print('Returned from add product page with result: $result');
               // Refresh products when returning from add product page
-              if (result == true) {
-                _refreshProducts();
+              if (result == true && mounted) {
+                print('Refreshing products after adding...');
+                // Add a small delay to ensure Firebase has processed the addition
+                await Future.delayed(const Duration(milliseconds: 100));
+                await _refreshProducts();
+                // Force a second refresh to ensure we get the latest data
+                await Future.delayed(const Duration(milliseconds: 200));
+                await _refreshProducts();
               }
             },
           ),
@@ -401,7 +445,11 @@ class _ProductState extends State<Product> {
                                                         themeProvider.iconColor,
                                                   ),
                                                   onPressed: () async {
-                                                    await Navigator.pushNamed(
+                                                    print(
+                                                        'Edit button pressed for product: ${product['name']}');
+                                                    final result =
+                                                        await Navigator
+                                                            .pushNamed(
                                                       context,
                                                       '/editProduct',
                                                       arguments: {
@@ -409,8 +457,14 @@ class _ProductState extends State<Product> {
                                                             product['id']
                                                       },
                                                     );
+                                                    print(
+                                                        'Edit - returned with result: $result');
                                                     // Refresh the product list when returning
-                                                    _refreshProducts();
+                                                    if (mounted) {
+                                                      print(
+                                                          'Edit - refreshing products...');
+                                                      await _refreshProducts();
+                                                    }
                                                   },
                                                   tooltip: 'Edit',
                                                 ),
@@ -443,10 +497,18 @@ class _ProductState extends State<Product> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          print('FloatingActionButton pressed - navigating to add product...');
           final result = await Navigator.pushNamed(context, '/addProduct');
+          print('FloatingActionButton - returned with result: $result');
           // Refresh products when returning from add product page
-          if (result == true) {
-            _refreshProducts();
+          if (result == true && mounted) {
+            print('FloatingActionButton - refreshing products...');
+            // Add a small delay to ensure Firebase has processed the addition
+            await Future.delayed(const Duration(milliseconds: 100));
+            await _refreshProducts();
+            // Force a second refresh to ensure we get the latest data
+            await Future.delayed(const Duration(milliseconds: 200));
+            await _refreshProducts();
           }
         },
         backgroundColor: themeProvider.gradientColors[0],
@@ -500,9 +562,9 @@ class _ProductState extends State<Product> {
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (builderContext, setDialogState) {
             return AlertDialog(
               backgroundColor: themeProvider.cardBackgroundColor,
               title: Text(
@@ -528,7 +590,7 @@ class _ProductState extends State<Product> {
                         label: Text(category),
                         selected: selectedCategory == category,
                         onSelected: (selected) {
-                          setState(() {
+                          setDialogState(() {
                             selectedCategory = category;
                           });
                         },
@@ -549,7 +611,7 @@ class _ProductState extends State<Product> {
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    Navigator.of(dialogContext).pop();
                   },
                   child: Text(
                     'Cancel',
@@ -558,18 +620,20 @@ class _ProductState extends State<Product> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    Navigator.of(dialogContext).pop();
                     // Apply the filter
-                    setState(() {
-                      if (selectedCategory == 'All') {
-                        filteredProducts = products;
-                      } else {
-                        filteredProducts = products
-                            .where((product) =>
-                                product['category'] == selectedCategory)
-                            .toList();
-                      }
-                    });
+                    if (mounted) {
+                      setState(() {
+                        if (selectedCategory == 'All') {
+                          filteredProducts = products;
+                        } else {
+                          filteredProducts = products
+                              .where((product) =>
+                                  product['category'] == selectedCategory)
+                              .toList();
+                        }
+                      });
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: themeProvider.gradientColors[0],
@@ -588,10 +652,12 @@ class _ProductState extends State<Product> {
   void _showDeleteConfirmation(BuildContext context, int index) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final product = filteredProducts[index];
+    final scaffoldMessenger =
+        ScaffoldMessenger.of(context); // Capture ScaffoldMessenger
 
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: themeProvider.cardBackgroundColor,
           title: Text(
@@ -605,7 +671,7 @@ class _ProductState extends State<Product> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
               },
               child: Text(
                 'Cancel',
@@ -614,7 +680,7 @@ class _ProductState extends State<Product> {
             ),
             ElevatedButton(
               onPressed: () async {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop(); // Close dialog first
 
                 try {
                   // Delete from Firestore if product has an ID
@@ -622,30 +688,30 @@ class _ProductState extends State<Product> {
                     await _firebaseService.deleteProduct(product['id']);
                   }
 
+                  if (!mounted) return; // Check mounted after async operation
+
                   // Update local state
                   setState(() {
                     products.removeWhere((p) => p['name'] == product['name']);
                     filteredProducts = List.from(products);
                   });
 
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${product['name']} deleted'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
+                  // Use captured ScaffoldMessenger instead of context
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text('${product['name']} deleted'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
                 } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content:
-                            Text('Failed to delete product: ${e.toString()}'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
+                  // Use captured ScaffoldMessenger instead of context
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content:
+                          Text('Failed to delete product: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -658,5 +724,11 @@ class _ProductState extends State<Product> {
         );
       },
     );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }

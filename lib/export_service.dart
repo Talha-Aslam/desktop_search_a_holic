@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:path_provider/path_provider.dart';
 import 'package:desktop_search_a_holic/firebase_service.dart';
 import 'package:desktop_search_a_holic/sales_service.dart';
@@ -119,14 +118,13 @@ class ExportService {
           await _firebaseService.getProducts();
 
       String csvContent =
-          'Product Name,Price,Quantity,Category,Type,Expiry Date,Created At\n';
+          'Product Name,Price,Quantity,Category,Expiry Date,Created At\n';
 
       for (var product in products) {
         csvContent += '"${product['name'] ?? ''}",'
             '"${product['price'] ?? ''}",'
             '"${product['quantity'] ?? ''}",'
             '"${product['category'] ?? ''}",'
-            '"${product['type'] ?? ''}",'
             '"${product['expiry'] ?? ''}",'
             '"${product['createdAt'] ?? ''}"\n';
       }

@@ -348,26 +348,6 @@ class _InvoiceState extends State<Invoice> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _openSystemPrint() async {
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'System print dialog would open here. Copy the text and paste it into a text editor to print.'),
-          backgroundColor: Colors.blue,
-          duration: Duration(seconds: 4),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Print system unavailable: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   Future<void> _shareInvoice() async {
     if (currentInvoice == null) return;
 

@@ -72,7 +72,15 @@ class _POSState extends State<POS> {
   void _calculateTotal() {
     double subtotal = 0;
     for (var item in cart) {
-      subtotal += item['price'] * item['quantity'];
+      // Ensure price and quantity are properly converted to double
+      double price = (item['price'] is int)
+          ? (item['price'] as int).toDouble()
+          : (item['price'] as double);
+      int quantity = (item['quantity'] is double)
+          ? (item['quantity'] as double).toInt()
+          : (item['quantity'] as int);
+
+      subtotal += price * quantity;
     }
 
     double discount = double.tryParse(_discountController.text) ?? 0;
@@ -87,6 +95,8 @@ class _POSState extends State<POS> {
   }
 
   Future<void> _loadProducts() async {
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });
@@ -94,6 +104,8 @@ class _POSState extends State<POS> {
     try {
       List<Map<String, dynamic>> loadedProducts =
           await _firebaseService.getProducts();
+
+      if (!mounted) return;
 
       setState(() {
         products = loadedProducts;
@@ -103,6 +115,8 @@ class _POSState extends State<POS> {
 
       _extractCategories();
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         _isLoading = false;
       });
@@ -130,7 +144,7 @@ class _POSState extends State<POS> {
       {
         "id": "1",
         "name": "Paracetamol 500mg",
-        "price": 100,
+        "price": 100.0,
         "quantity": 100,
         "category": "Medicine",
         "expiry": "2025-12-31",
@@ -139,7 +153,7 @@ class _POSState extends State<POS> {
       {
         "id": "2",
         "name": "Aspirin 300mg",
-        "price": 200,
+        "price": 200.0,
         "quantity": 50,
         "category": "Medicine",
         "expiry": "2026-05-15",
@@ -148,7 +162,7 @@ class _POSState extends State<POS> {
       {
         "id": "3",
         "name": "Vitamins C",
-        "price": 150,
+        "price": 150.0,
         "quantity": 200,
         "category": "Supplements",
         "expiry": "2027-08-22",
@@ -157,7 +171,7 @@ class _POSState extends State<POS> {
       {
         "id": "4",
         "name": "Cough Syrup",
-        "price": 85,
+        "price": 85.0,
         "quantity": 30,
         "category": "Medicine",
         "expiry": "2025-10-30",
@@ -166,7 +180,7 @@ class _POSState extends State<POS> {
       {
         "id": "5",
         "name": "Bandages",
-        "price": 50,
+        "price": 50.0,
         "quantity": 100,
         "category": "First Aid",
         "expiry": "2028-01-01",
@@ -208,13 +222,16 @@ class _POSState extends State<POS> {
             product['category'] == _selectedCategory;
 
         // Price range filter
-        final price = product['price'] is int
-            ? product['price'].toDouble()
-            : product['price'];
+        final price = (product['price'] is int)
+            ? (product['price'] as int).toDouble()
+            : (product['price'] as double);
         final priceMatch = price >= _minPrice && price <= _maxPrice;
 
         // Availability filter
-        final quantityMatch = !_onlyInStock || (product['quantity'] > 0);
+        final quantity = (product['quantity'] is double)
+            ? (product['quantity'] as double).toInt()
+            : (product['quantity'] as int);
+        final quantityMatch = !_onlyInStock || (quantity > 0);
 
         return textMatch && categoryMatch && priceMatch && quantityMatch;
       }).toList();
@@ -227,18 +244,67 @@ class _POSState extends State<POS> {
         filteredProducts.sort(
             (a, b) => b['name'].toString().compareTo(a['name'].toString()));
       } else if (_sortBy == 'price_asc') {
-        filteredProducts.sort((a, b) => a['price'].compareTo(b['price']));
+        filteredProducts.sort((a, b) {
+          double priceA = (a['price'] is int)
+              ? (a['price'] as int).toDouble()
+              : (a['price'] as double);
+          double priceB = (b['price'] is int)
+              ? (b['price'] as int).toDouble()
+              : (b['price'] as double);
+          return priceA.compareTo(priceB);
+        });
       } else if (_sortBy == 'price_desc') {
-        filteredProducts.sort((a, b) => b['price'].compareTo(a['price']));
+        filteredProducts.sort((a, b) {
+          double priceA = (a['price'] is int)
+              ? (a['price'] as int).toDouble()
+              : (a['price'] as double);
+          double priceB = (b['price'] is int)
+              ? (b['price'] as int).toDouble()
+              : (b['price'] as double);
+          return priceB.compareTo(priceA);
+        });
       }
     });
   }
 
   void _addToCart(Map<String, dynamic> product) {
+    // Check current product quantity
+    int currentQuantity = (product['quantity'] is double)
+        ? (product['quantity'] as double).toInt()
+        : (product['quantity'] as int);
+
+    if (currentQuantity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product['name']} is out of stock'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     // Check if product is already in cart
     int index = cart.indexWhere((item) => item['id'] == product['id']);
 
     if (index != -1) {
+      // Check if we can add more quantity
+      int cartQuantity = (cart[index]['quantity'] is double)
+          ? (cart[index]['quantity'] as double).toInt()
+          : (cart[index]['quantity'] as int);
+
+      if (cartQuantity >= currentQuantity) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Cannot add more ${product['name']}. Only $currentQuantity available.'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+
       // Product already in cart, increase quantity
       setState(() {
         cart[index]['quantity'] = cart[index]['quantity'] + 1;
@@ -269,6 +335,31 @@ class _POSState extends State<POS> {
       return;
     }
 
+    // Get the product from the main products list to check available quantity
+    String productId = cart[index]['id'];
+    Map<String, dynamic>? product = products.firstWhere(
+      (p) => p['id'] == productId,
+      orElse: () => {},
+    );
+
+    if (product.isNotEmpty) {
+      int availableQuantity = (product['quantity'] is double)
+          ? (product['quantity'] as double).toInt()
+          : (product['quantity'] as int);
+
+      if (quantity > availableQuantity) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Only $availableQuantity ${cart[index]['name']} available in stock'),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() {
       cart[index]['quantity'] = quantity;
     });
@@ -284,17 +375,56 @@ class _POSState extends State<POS> {
     _calculateTotal();
   }
 
+  /// Update local product quantities after a successful sale
+  void _updateLocalProductQuantity(String productId, int soldQuantity) {
+    setState(() {
+      // Update the main products list
+      for (int i = 0; i < products.length; i++) {
+        if (products[i]['id'] == productId) {
+          int currentQuantity = (products[i]['quantity'] is double)
+              ? (products[i]['quantity'] as double).toInt()
+              : (products[i]['quantity'] as int);
+
+          int newQuantity = currentQuantity - soldQuantity;
+          if (newQuantity < 0) newQuantity = 0; // Prevent negative quantities
+
+          products[i]['quantity'] = newQuantity;
+          break;
+        }
+      }
+
+      // Update the filtered products list
+      for (int i = 0; i < filteredProducts.length; i++) {
+        if (filteredProducts[i]['id'] == productId) {
+          int currentQuantity = (filteredProducts[i]['quantity'] is double)
+              ? (filteredProducts[i]['quantity'] as double).toInt()
+              : (filteredProducts[i]['quantity'] as int);
+
+          int newQuantity = currentQuantity - soldQuantity;
+          if (newQuantity < 0) newQuantity = 0; // Prevent negative quantities
+
+          filteredProducts[i]['quantity'] = newQuantity;
+          break;
+        }
+      }
+    });
+  }
+
   Future<void> _processOrder() async {
     // Validate order
     if (cart.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cart is empty. Please add products.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cart is empty. Please add products.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
+
+    if (!mounted) return;
 
     setState(() {
       _isLoading = true;
@@ -311,9 +441,18 @@ class _POSState extends State<POS> {
             .map((item) => {
                   'productId': item['id'],
                   'name': item['name'],
-                  'price': item['price'],
-                  'quantity': item['quantity'],
-                  'subtotal': item['price'] * item['quantity'],
+                  'price': (item['price'] is int)
+                      ? (item['price'] as int).toDouble()
+                      : (item['price'] as double),
+                  'quantity': (item['quantity'] is double)
+                      ? (item['quantity'] as double).toInt()
+                      : (item['quantity'] as int),
+                  'subtotal': ((item['price'] is int)
+                          ? (item['price'] as int).toDouble()
+                          : (item['price'] as double)) *
+                      ((item['quantity'] is double)
+                          ? (item['quantity'] as double).toInt()
+                          : (item['quantity'] as int)),
                 })
             .toList(),
         'subtotal': _subtotal,
@@ -325,29 +464,44 @@ class _POSState extends State<POS> {
       };
 
       // Save to Firestore using SalesService
-      String orderID = await _salesService.addSale(orderData);
+      await _salesService.addSale(orderData);
 
       // Update product quantities in inventory
       for (var item in cart) {
+        if (!mounted) return; // Check mounted state in loop
+
         // Get the current product from inventory
         String productId = item['id'];
-        int soldQuantity = item['quantity'];
+        int soldQuantity = (item['quantity'] is double)
+            ? (item['quantity'] as double).toInt()
+            : (item['quantity'] as int);
 
         try {
           // Update product quantity using SalesService
           await _salesService.updateProductInventory(productId, soldQuantity);
+
+          if (!mounted) return; // Check again after async operation
+
+          // Update local product quantities in real-time
+          _updateLocalProductQuantity(productId, soldQuantity);
         } catch (e) {
           // Continue with the next item even if this one fails
+          print('Failed to update inventory for product $productId: $e');
         }
       }
+
+      if (!mounted) return; // Check before showing dialog
 
       // Show success message
       QuickAlert.show(
         context: context,
         type: QuickAlertType.success,
         title: "Order Complete",
-        text: "Sale has been processed successfully!",
+        text:
+            "Sale has been processed successfully!\nProduct quantities have been updated.",
       );
+
+      if (!mounted) return; // Check before final setState
 
       // Clear the cart and customer info
       setState(() {
@@ -361,6 +515,8 @@ class _POSState extends State<POS> {
         _total = 0;
       });
     } catch (e) {
+      if (!mounted) return; // Check before showing error
+
       // Show error message
       QuickAlert.show(
         context: context,
@@ -369,9 +525,12 @@ class _POSState extends State<POS> {
         text: "Failed to process order: ${e.toString()}",
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        // Check before final setState
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -1145,117 +1304,188 @@ class _POSState extends State<POS> {
 
   Widget _buildProductCard(
       Map<String, dynamic> product, ThemeProvider themeProvider) {
+    // Get current quantity for styling
+    int currentQuantity = (product['quantity'] is double)
+        ? (product['quantity'] as double).toInt()
+        : (product['quantity'] as int);
+
+    bool isOutOfStock = currentQuantity <= 0;
+    bool isLowStock = currentQuantity > 0 && currentQuantity < 10;
+
     return Card(
-      color: themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.white,
-      elevation: 2,
+      color: isOutOfStock
+          ? (themeProvider.isDarkMode
+              ? Colors.grey.shade900
+              : Colors.grey.shade300)
+          : (themeProvider.isDarkMode ? Colors.grey.shade800 : Colors.white),
+      elevation: isOutOfStock ? 1 : 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: InkWell(
-        onTap: () => _addToCart(product),
+        onTap: () {
+          // Only allow adding to cart if product is in stock
+          int currentQuantity = (product['quantity'] is double)
+              ? (product['quantity'] as double).toInt()
+              : (product['quantity'] as int);
+
+          if (currentQuantity > 0) {
+            _addToCart(product);
+          } else {
+            // Show out of stock message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${product['name']} is out of stock'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+          child: Stack(
             children: [
-              // Category badge and icon in a row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    _getCategoryIcon(product['category']),
-                    size: 24,
-                    color: themeProvider.gradientColors[0],
-                  ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _getCategoryColor(product['category']),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      product['category'],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  // Category badge and icon in a row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(
+                        _getCategoryIcon(product['category']),
+                        size: 24,
+                        color: isOutOfStock
+                            ? Colors.grey
+                            : themeProvider.gradientColors[0],
                       ),
-                    ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isOutOfStock
+                              ? Colors.grey
+                              : _getCategoryColor(product['category']),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          product['category'],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
 
-              const SizedBox(height: 4),
+                  const SizedBox(height: 4),
 
-              // Product name
-              Text(
-                product['name'],
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: themeProvider.textColor,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              const SizedBox(height: 4),
-
-              // Price and stock
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+                  // Product name
                   Text(
-                    '\$${product['price']}',
+                    product['name'],
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: themeProvider.gradientColors[0],
                       fontSize: 14,
+                      color:
+                          isOutOfStock ? Colors.grey : themeProvider.textColor,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _getStockColor(product['quantity']),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Stock: ${product['quantity']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
+
+                  const SizedBox(height: 4),
+
+                  // Price and stock
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '\$${((product['price'] is int) ? (product['price'] as int).toDouble() : (product['price'] as double)).toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isOutOfStock
+                              ? Colors.grey
+                              : themeProvider.gradientColors[0],
+                          fontSize: 14,
+                          decoration: isOutOfStock
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _getStockColor(currentQuantity),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          isOutOfStock
+                              ? 'Out of Stock'
+                              : (isLowStock
+                                  ? 'Low: $currentQuantity'
+                                  : 'Stock: $currentQuantity'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Add to cart button
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 28,
+                    child: ElevatedButton.icon(
+                      onPressed: currentQuantity > 0
+                          ? () => _addToCart(product)
+                          : null,
+                      icon: Icon(
+                          isOutOfStock ? Icons.block : Icons.add_shopping_cart,
+                          size: 12),
+                      label: Text(isOutOfStock ? 'Out of Stock' : 'Add',
+                          style: const TextStyle(fontSize: 12)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isOutOfStock
+                            ? Colors.grey
+                            : themeProvider.gradientColors[0],
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
 
-              // Add to cart button
-              const SizedBox(height: 4),
-              SizedBox(
-                width: double.infinity,
-                height: 28,
-                child: ElevatedButton.icon(
-                  onPressed: (product['quantity'] > 0)
-                      ? () => _addToCart(product)
-                      : null,
-                  icon: const Icon(Icons.add_shopping_cart, size: 12),
-                  label: const Text('Add', style: TextStyle(fontSize: 12)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: themeProvider.gradientColors[0],
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
+              // Out of stock overlay
+              if (isOutOfStock)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.block,
+                        color: Colors.red,
+                        size: 32,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -1265,7 +1495,15 @@ class _POSState extends State<POS> {
 
   Widget _buildCartItem(int index, ThemeProvider themeProvider) {
     final item = cart[index];
-    final double itemTotal = item['price'] * item['quantity'];
+
+    // Ensure proper type handling for price and quantity
+    final double price = (item['price'] is int)
+        ? (item['price'] as int).toDouble()
+        : (item['price'] as double);
+    final int quantity = (item['quantity'] is double)
+        ? (item['quantity'] as double).toInt()
+        : (item['quantity'] as int);
+    final double itemTotal = price * quantity;
 
     return Row(
       children: [
@@ -1281,15 +1519,19 @@ class _POSState extends State<POS> {
             children: [
               IconButton(
                 icon: const Icon(Icons.remove, size: 16),
-                onPressed: () =>
-                    _updateCartItemQuantity(index, item['quantity'] - 1),
+                onPressed: () {
+                  int currentQuantity = (item['quantity'] is double)
+                      ? (item['quantity'] as double).toInt()
+                      : (item['quantity'] as int);
+                  _updateCartItemQuantity(index, currentQuantity - 1);
+                },
                 splashRadius: 20,
                 tooltip: 'Decrease quantity',
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
-                  item['quantity'].toString(),
+                  quantity.toString(),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: themeProvider.textColor,
@@ -1298,8 +1540,12 @@ class _POSState extends State<POS> {
               ),
               IconButton(
                 icon: const Icon(Icons.add, size: 16),
-                onPressed: () =>
-                    _updateCartItemQuantity(index, item['quantity'] + 1),
+                onPressed: () {
+                  int currentQuantity = (item['quantity'] is double)
+                      ? (item['quantity'] as double).toInt()
+                      : (item['quantity'] as int);
+                  _updateCartItemQuantity(index, currentQuantity + 1);
+                },
                 splashRadius: 20,
                 tooltip: 'Increase quantity',
               ),
@@ -1323,7 +1569,7 @@ class _POSState extends State<POS> {
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                '\$${item['price']} × ${item['quantity']} = \$${itemTotal.toStringAsFixed(2)}',
+                '\$${price.toStringAsFixed(2)} × $quantity = \$${itemTotal.toStringAsFixed(2)}',
                 style: TextStyle(
                   color: themeProvider.textColor.withOpacity(0.7),
                   fontSize: 12,

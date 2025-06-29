@@ -160,12 +160,6 @@ class _SidebarState extends State<Sidebar> {
                 ),
                 _buildListTile(
                   context: context,
-                  icon: Icons.edit,
-                  text: 'Edit Product',
-                  route: '/editProduct',
-                ),
-                _buildListTile(
-                  context: context,
                   icon: Icons.point_of_sale,
                   text: 'Point of Sale',
                   route: '/pos',

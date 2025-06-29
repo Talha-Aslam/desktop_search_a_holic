@@ -2,8 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:quickalert/models/quickalert_type.dart';
-import 'package:quickalert/widgets/quickalert_dialog.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:desktop_search_a_holic/sidebar.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -23,7 +22,6 @@ class _AddProduct extends State<AddProduct> {
   final TextEditingController _productName = TextEditingController();
   final TextEditingController _productPrice = TextEditingController();
   final TextEditingController _productQty = TextEditingController();
-  final TextEditingController _productType = TextEditingController();
   final TextEditingController _productCategory = TextEditingController();
 
   GlobalKey<FormState> formkey = GlobalKey<FormState>();
@@ -31,28 +29,22 @@ class _AddProduct extends State<AddProduct> {
   bool _isLoading = false;
   final FirebaseService _firebaseService = FirebaseService();
 
+  // Define categories list once to avoid duplicates
+  static const List<String> _categories = [
+    "Medicine",
+    "Supplements",
+    "First Aid",
+    "Hygiene",
+    "Other"
+  ];
+
+  // Track selected category for dropdown
+  String? _selectedCategory;
+
   @override
   void initState() {
     dateinput.text = "";
     super.initState();
-  }
-
-  void showAlert() {
-    QuickAlert.show(
-      context: context,
-      type: QuickAlertType.error,
-      title: 'Failed!',
-      text: '${_productName.text} Failed to Add!',
-    );
-  }
-
-  void showAlert1() {
-    QuickAlert.show(
-      context: context,
-      type: QuickAlertType.success,
-      title: "Added!",
-      text: '${_productName.text} Product Added Successfully!',
-    );
   }
 
   Future<void> _saveProduct() async {
@@ -68,7 +60,7 @@ class _AddProduct extends State<AddProduct> {
       // Get current user for shop ID
       final user = _firebaseService.currentUser;
       String? shopId;
-      
+
       // Get shop ID from user profile if available
       if (user != null) {
         try {
@@ -81,19 +73,18 @@ class _AddProduct extends State<AddProduct> {
           print('Error getting shop ID: $e');
         }
       }
-      
+
       // Create product data map
       Map<String, dynamic> productData = {
         'name': _productName.text.trim(),
-        'price': double.parse(_productPrice.text.trim()),
-        'quantity': double.parse(_productQty.text.trim()),
+        'price': double.tryParse(_productPrice.text.trim()) ?? 0.0,
+        'quantity': int.tryParse(_productQty.text.trim()) ?? 0,
         'expiry': dateinput.text.trim(),
         'category': _productCategory.text.trim(),
-        'type': _productType.text.trim(),
         'userEmail': _firebaseService.currentUser?.email ?? '',
         'createdAt': DateTime.now().toIso8601String(),
       };
-      
+
       // Add shop ID to product data if available
       if (shopId != null && shopId.isNotEmpty) {
         productData['shopId'] = shopId;
@@ -102,25 +93,37 @@ class _AddProduct extends State<AddProduct> {
       // Save to Firestore using FirebaseService
       await _firebaseService.addProduct(productData);
 
-      // Show success message
-      showAlert1();
+      if (!mounted) return; // Check mounted after async operation
 
-      // Clear all fields
+      // Show success message using SnackBar
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${_productName.text} Product Added Successfully!'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+
+      // Clear all fields for next product entry
       _clearForm();
-
-      // Return success to parent page
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
     } catch (e) {
-      // Show error message
+      // Show error message using SnackBar
       if (mounted) {
-        QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
-          title: 'Failed!',
-          text: 'Failed to add product: ${e.toString()}',
-        );
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to add product: ${e.toString()}'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+        });
       }
     } finally {
       setState(() {
@@ -133,9 +136,9 @@ class _AddProduct extends State<AddProduct> {
     _productName.clear();
     _productPrice.clear();
     _productQty.clear();
-    _productType.clear();
     _productCategory.clear();
     dateinput.clear();
+    _selectedCategory = null;
   }
 
   @override
@@ -364,42 +367,20 @@ class _AddProduct extends State<AddProduct> {
 
                             const SizedBox(height: 16),
 
-                            // Visibility Type
-                            _buildDropdown(
-                              context,
-                              "Product Visibility",
-                              Icons.visibility,
-                              ["Public", "Private"],
-                              (value) {
-                                _productType.text = value.toString();
-                              },
-                              "Select Visibility",
-                              validator: (value) {
-                                if (value == null) {
-                                  return 'Please select visibility';
-                                }
-                                return null;
-                              },
-                            ),
-
-                            const SizedBox(height: 16),
-
                             // Product Category
                             _buildDropdown(
                               context,
                               "Product Category",
                               Icons.category,
-                              [
-                                "Medicine",
-                                "Supplements",
-                                "First Aid",
-                                "Hygiene",
-                                "Other"
-                              ],
+                              _categories,
                               (value) {
-                                _productCategory.text = value.toString();
+                                setState(() {
+                                  _selectedCategory = value;
+                                  _productCategory.text = value.toString();
+                                });
                               },
                               "Select Category",
+                              value: _selectedCategory,
                               validator: (value) {
                                 if (value == null) {
                                   return 'Please select category';
@@ -554,11 +535,13 @@ class _AddProduct extends State<AddProduct> {
     List<String> items,
     void Function(dynamic) onChanged,
     String hint, {
+    String? value,
     String? Function(dynamic)? validator,
   }) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return DropdownButtonFormField(
+      value: value,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: themeProvider.textColor),
