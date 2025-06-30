@@ -15,12 +15,12 @@ class DataVisualizationWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: themeProvider.isDarkMode 
+        color: themeProvider.isDarkMode
             ? Colors.grey.shade800.withOpacity(0.7)
             : Colors.grey.shade100.withOpacity(0.9),
         borderRadius: BorderRadius.circular(12),
@@ -57,103 +57,148 @@ class DataVisualizationWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildDataVisualization(Map<String, dynamic> data, ThemeProvider themeProvider) {
-    // Sales data visualization
+  Widget _buildDataVisualization(
+      Map<String, dynamic> data, ThemeProvider themeProvider) {
+    // Sales data visualization (check for revenue AND orders)
     if (data.containsKey('revenue') && data.containsKey('orders')) {
       return _buildSalesChart(data, themeProvider);
     }
-    
-    // Inventory data visualization
-    if (data.containsKey('totalItems') || data.containsKey('total')) {
+
+    // Inventory data visualization (check for inventory-specific fields)
+    if (data.containsKey('totalItems') ||
+        data.containsKey('total') ||
+        data.containsKey('lowStock') ||
+        data.containsKey('outOfStock')) {
       return _buildInventoryChart(data, themeProvider);
     }
-    
-    // Alert data visualization
+
+    // Alert data visualization (check if alerts key exists and has appropriate data)
     if (data.containsKey('alerts')) {
       return _buildAlertChart(data, themeProvider);
     }
-    
-    // Default data display
+
+    // Default data display for any other data
     return _buildDataTable(data, themeProvider);
   }
 
-  Widget _buildSalesChart(Map<String, dynamic> data, ThemeProvider themeProvider) {
+  Widget _buildSalesChart(
+      Map<String, dynamic> data, ThemeProvider themeProvider) {
     double revenue = (data['revenue'] as num?)?.toDouble() ?? 0;
     int orders = data['orders'] ?? 0;
     double avgOrder = orders > 0 ? revenue / orders : 0;
-    
+
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildMetricCard('Revenue', '\$${revenue.toStringAsFixed(2)}', 
+            _buildMetricCard('Revenue', '\$${revenue.toStringAsFixed(2)}',
                 Icons.attach_money, Colors.green, themeProvider),
-            _buildMetricCard('Orders', orders.toString(), 
-                Icons.shopping_cart, Colors.blue, themeProvider),
-            _buildMetricCard('Avg Order', '\$${avgOrder.toStringAsFixed(2)}', 
+            _buildMetricCard('Orders', orders.toString(), Icons.shopping_cart,
+                Colors.blue, themeProvider),
+            _buildMetricCard('Avg Order', '\$${avgOrder.toStringAsFixed(2)}',
                 Icons.trending_up, Colors.orange, themeProvider),
           ],
         ),
         const SizedBox(height: 12),
         // Simple progress bars for visual appeal
-        _buildProgressBar('Sales Performance', revenue / 1000, Colors.green, themeProvider),
+        _buildProgressBar(
+            'Sales Performance', revenue / 1000, Colors.green, themeProvider),
       ],
     );
   }
 
-  Widget _buildInventoryChart(Map<String, dynamic> data, ThemeProvider themeProvider) {
+  Widget _buildInventoryChart(
+      Map<String, dynamic> data, ThemeProvider themeProvider) {
     int total = data['totalItems'] ?? data['total'] ?? 0;
     int lowStock = data['lowStock'] ?? 0;
     int outOfStock = data['outOfStock'] ?? 0;
     int healthy = total - lowStock - outOfStock;
-    
+
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildMetricCard('Total', total.toString(), 
-                Icons.inventory, Colors.blue, themeProvider),
-            _buildMetricCard('Healthy', healthy.toString(), 
-                Icons.check_circle, Colors.green, themeProvider),
-            _buildMetricCard('Low Stock', lowStock.toString(), 
-                Icons.warning, Colors.orange, themeProvider),
-            _buildMetricCard('Out of Stock', outOfStock.toString(), 
-                Icons.error, Colors.red, themeProvider),
+            _buildMetricCard('Total', total.toString(), Icons.inventory,
+                Colors.blue, themeProvider),
+            _buildMetricCard('Healthy', healthy.toString(), Icons.check_circle,
+                Colors.green, themeProvider),
+            _buildMetricCard('Low Stock', lowStock.toString(), Icons.warning,
+                Colors.orange, themeProvider),
+            _buildMetricCard('Out of Stock', outOfStock.toString(), Icons.error,
+                Colors.red, themeProvider),
           ],
         ),
         const SizedBox(height: 12),
         if (total > 0) ...[
-          _buildProgressBar('Healthy Stock', healthy / total, Colors.green, themeProvider),
+          _buildProgressBar(
+              'Healthy Stock', healthy / total, Colors.green, themeProvider),
           const SizedBox(height: 4),
-          _buildProgressBar('Low Stock', lowStock / total, Colors.orange, themeProvider),
+          _buildProgressBar(
+              'Low Stock', lowStock / total, Colors.orange, themeProvider),
           const SizedBox(height: 4),
-          _buildProgressBar('Out of Stock', outOfStock / total, Colors.red, themeProvider),
+          _buildProgressBar(
+              'Out of Stock', outOfStock / total, Colors.red, themeProvider),
         ],
       ],
     );
   }
 
-  Widget _buildAlertChart(Map<String, dynamic> data, ThemeProvider themeProvider) {
-    List<dynamic> alerts = data['alerts'] ?? [];
+  Widget _buildAlertChart(
+      Map<String, dynamic> data, ThemeProvider themeProvider) {
+    // Handle different possible data structures
+    List<dynamic> alerts = [];
+
+    if (data['alerts'] is List) {
+      alerts = data['alerts'] as List<dynamic>;
+    } else if (data['alerts'] is int) {
+      // If alerts is just a count, create a simple display
+      int alertCount = data['alerts'] as int;
+      return Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildMetricCard('Total Alerts', alertCount.toString(),
+                  Icons.notifications, Colors.orange, themeProvider),
+              _buildMetricCard(
+                  'Status',
+                  alertCount > 0 ? 'Action Needed' : 'All Good',
+                  alertCount > 0 ? Icons.warning : Icons.check_circle,
+                  alertCount > 0 ? Colors.red : Colors.green,
+                  themeProvider),
+            ],
+          ),
+        ],
+      );
+    }
+
     Map<String, int> severityCount = {};
-    
+
     for (var alert in alerts) {
       String severity = alert['severity']?.toString() ?? 'unknown';
       severityCount[severity] = (severityCount[severity] ?? 0) + 1;
     }
-    
+
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildMetricCard('Critical', (severityCount['AlertSeverity.critical'] ?? 0).toString(), 
-                Icons.error, Colors.red, themeProvider),
-            _buildMetricCard('Warning', (severityCount['AlertSeverity.warning'] ?? 0).toString(), 
-                Icons.warning, Colors.orange, themeProvider),
-            _buildMetricCard('Total', alerts.length.toString(), 
+            _buildMetricCard(
+                'Critical',
+                (severityCount['AlertSeverity.critical'] ?? 0).toString(),
+                Icons.error,
+                Colors.red,
+                themeProvider),
+            _buildMetricCard(
+                'Warning',
+                (severityCount['AlertSeverity.warning'] ?? 0).toString(),
+                Icons.warning,
+                Colors.orange,
+                themeProvider),
+            _buildMetricCard('Total', alerts.length.toString(),
                 Icons.notifications, Colors.blue, themeProvider),
           ],
         ),
@@ -175,11 +220,14 @@ class DataVisualizationWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildAlertCard(Map<String, dynamic> alert, ThemeProvider themeProvider) {
+  Widget _buildAlertCard(
+      Map<String, dynamic> alert, ThemeProvider themeProvider) {
     Color alertColor = Colors.orange;
-    if (alert['severity']?.toString().contains('critical') == true) alertColor = Colors.red;
-    if (alert['severity']?.toString().contains('warning') == true) alertColor = Colors.orange;
-    
+    if (alert['severity']?.toString().contains('critical') == true)
+      alertColor = Colors.red;
+    if (alert['severity']?.toString().contains('warning') == true)
+      alertColor = Colors.orange;
+
     return Container(
       width: 140,
       margin: const EdgeInsets.only(right: 8),
@@ -218,7 +266,8 @@ class DataVisualizationWidget extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              alert['severity']?.toString().split('.').last.toUpperCase() ?? 'ALERT',
+              alert['severity']?.toString().split('.').last.toUpperCase() ??
+                  'ALERT',
               style: const TextStyle(
                 fontSize: 8,
                 color: Colors.white,
@@ -231,7 +280,8 @@ class DataVisualizationWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildDataTable(Map<String, dynamic> data, ThemeProvider themeProvider) {
+  Widget _buildDataTable(
+      Map<String, dynamic> data, ThemeProvider themeProvider) {
     return Column(
       children: data.entries.take(6).map((entry) {
         return Padding(
@@ -261,7 +311,8 @@ class DataVisualizationWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricCard(String label, String value, IconData icon, Color color, ThemeProvider themeProvider) {
+  Widget _buildMetricCard(String label, String value, IconData icon,
+      Color color, ThemeProvider themeProvider) {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -297,7 +348,8 @@ class DataVisualizationWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressBar(String label, double progress, Color color, ThemeProvider themeProvider) {
+  Widget _buildProgressBar(
+      String label, double progress, Color color, ThemeProvider themeProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -325,7 +377,9 @@ class DataVisualizationWidget extends StatelessWidget {
         Container(
           height: 6,
           decoration: BoxDecoration(
-            color: themeProvider.isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+            color: themeProvider.isDarkMode
+                ? Colors.grey.shade700
+                : Colors.grey.shade300,
             borderRadius: BorderRadius.circular(3),
           ),
           child: FractionallySizedBox(
@@ -344,9 +398,11 @@ class DataVisualizationWidget extends StatelessWidget {
   }
 
   String _formatKey(String key) {
-    return key.replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(1)}')
+    return key
+        .replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(1)}')
         .split(' ')
-        .map((word) => word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : '')
+        .map((word) =>
+            word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : '')
         .join(' ')
         .trim();
   }
@@ -376,9 +432,10 @@ class ActionButtonsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    
-    if (suggestions == null || suggestions!.isEmpty) return const SizedBox.shrink();
-    
+
+    if (suggestions == null || suggestions!.isEmpty)
+      return const SizedBox.shrink();
+
     return Container(
       margin: const EdgeInsets.only(top: 12),
       child: Wrap(
@@ -395,7 +452,8 @@ class ActionButtonsWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(String text, String action, ThemeProvider themeProvider) {
+  Widget _buildActionButton(
+      String text, String action, ThemeProvider themeProvider) {
     return InkWell(
       onTap: () => onActionPressed(action),
       borderRadius: BorderRadius.circular(20),
@@ -533,7 +591,8 @@ class _TypingIndicatorWidgetState extends State<TypingIndicatorWidget>
               width: 8,
               height: 8,
               decoration: BoxDecoration(
-                color: widget.themeProvider.gradientColors[0].withOpacity(_animations[index].value),
+                color: widget.themeProvider.gradientColors[0]
+                    .withOpacity(_animations[index].value),
                 borderRadius: BorderRadius.circular(4),
               ),
             );
