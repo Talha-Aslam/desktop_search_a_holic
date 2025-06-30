@@ -20,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void _initializeApp() async {
     try {
       // Small delay to ensure the widget tree is fully built
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 1500));
 
       // Initialize auto backup service after the app is properly mounted
       if (mounted) {

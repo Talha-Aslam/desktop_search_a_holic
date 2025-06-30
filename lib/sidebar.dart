@@ -74,25 +74,17 @@ class _SidebarState extends State<Sidebar> {
               children: [
                 const SizedBox(height: 12),
                 const HealSearchLogo(
-                  width: 60,
-                  height: 60,
-                  borderRadius: 15,
+                  width: 80,
+                  height: 80,
+                  borderRadius: 20,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 const Text(
                   'HealSearch',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  'Retail Management',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12, // Reduced from 14 to 12
                   ),
                 ),
               ],
