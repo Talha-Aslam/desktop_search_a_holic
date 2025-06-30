@@ -18,6 +18,10 @@ class _BackupHistoryPageState extends State<BackupHistoryPage> {
   Map<String, dynamic>? _statistics;
   bool _isLoading = true;
   String _selectedFilter = 'all';
+  bool _isDisposed = false;
+
+  // Store theme provider reference safely
+  ThemeProvider? _themeProvider;
 
   final List<Map<String, String>> _filterOptions = [
     {'value': 'all', 'label': 'All Operations'},
@@ -32,6 +36,22 @@ class _BackupHistoryPageState extends State<BackupHistoryPage> {
   void initState() {
     super.initState();
     _loadBackupHistory();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Safely store the ThemeProvider reference when dependencies change
+    if (!_isDisposed) {
+      _themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _themeProvider = null; // Clear the reference
+    super.dispose();
   }
 
   Future<void> _loadBackupHistory() async {
@@ -80,7 +100,7 @@ class _BackupHistoryPageState extends State<BackupHistoryPage> {
           if (backup['timestamp'] is String) {
             timestamp = DateTime.parse(backup['timestamp']);
           } else {
-            // Assume it's a Firestore Timestamp
+            // Handle Firestore Timestamp
             timestamp = (backup['timestamp'] as dynamic).toDate();
           }
           return timestamp.isAfter(yesterday);
@@ -402,10 +422,24 @@ class _BackupHistoryPageState extends State<BackupHistoryPage> {
   Widget _buildHistoryItem(Map<String, dynamic> backup) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    final DateTime timestamp = DateTime.parse(backup['timestamp']);
-    final String type = backup['type'] ?? 'unknown';
-    final String status = backup['status'] ?? 'unknown';
-    final String description = backup['description'] ?? 'No description';
+    DateTime timestamp;
+    try {
+      if (backup['timestamp'] is String) {
+        timestamp = DateTime.parse(backup['timestamp']);
+      } else if (backup['timestamp'] != null) {
+        // Handle Firestore Timestamp
+        timestamp = (backup['timestamp'] as dynamic).toDate();
+      } else {
+        timestamp = DateTime.now();
+      }
+    } catch (e) {
+      timestamp = DateTime.now();
+    }
+
+    final String type = backup['type']?.toString() ?? 'unknown';
+    final String status = backup['status']?.toString() ?? 'unknown';
+    final String description =
+        backup['description']?.toString() ?? 'No description';
 
     Color statusColor = status == 'success' ? Colors.green : Colors.red;
     IconData typeIcon = _getTypeIcon(type);
@@ -514,11 +548,14 @@ class _BackupHistoryPageState extends State<BackupHistoryPage> {
   }
 
   void _showCleanupDialog() {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
+    if (_isDisposed || _themeProvider == null || !mounted) return;
+
+    final themeProvider = _themeProvider!;
+    final pageContext = context; // Store main context safely
 
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: pageContext,
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: themeProvider.cardBackgroundColor,
         title: Text(
           'Cleanup Old Logs',
@@ -530,7 +567,7 @@ class _BackupHistoryPageState extends State<BackupHistoryPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text(
               'Cancel',
               style: TextStyle(color: themeProvider.textColor),
@@ -538,24 +575,30 @@ class _BackupHistoryPageState extends State<BackupHistoryPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
+
+              if (!mounted || _isDisposed) return;
 
               try {
                 await _historyService.cleanupOldLogs();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Old logs cleaned up successfully'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-                _loadBackupHistory(); // Refresh the list
+                if (mounted && !_isDisposed) {
+                  ScaffoldMessenger.of(pageContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Old logs cleaned up successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  _loadBackupHistory(); // Refresh the list
+                }
               } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Failed to cleanup logs: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                if (mounted && !_isDisposed) {
+                  ScaffoldMessenger.of(pageContext).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to cleanup logs: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(

@@ -11,48 +11,33 @@ import 'package:desktop_search_a_holic/profile.dart';
 import 'package:desktop_search_a_holic/reports.dart';
 import 'package:desktop_search_a_holic/sales.dart';
 import 'package:desktop_search_a_holic/settings_page.dart';
+import 'package:desktop_search_a_holic/backup_history_page.dart';
+import 'package:desktop_search_a_holic/privacy_policy_page.dart';
+import 'package:desktop_search_a_holic/terms_of_service_page.dart';
 import 'package:desktop_search_a_holic/splash.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/uploadData.dart';
-import 'package:desktop_search_a_holic/backup_history_page.dart';
-import 'package:desktop_search_a_holic/auto_backup_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:window_manager/window_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize window manager for desktop platforms
-  if (!kIsWeb) {
-    await windowManager.ensureInitialized();
+  // Set up global error handling
+  FlutterError.onError = (FlutterErrorDetails details) {
+    print('Flutter Error: ${details.exception}');
+    print('Stack trace: ${details.stack}');
+  };
 
-    WindowOptions windowOptions = const WindowOptions(
-      size: Size(1024, 768), // Default size
-      minimumSize:
-          Size(1024, 768), // Lock minimum size to prevent smaller windows
-      center: true,
-      backgroundColor: Colors.transparent,
-      skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.normal,
-      fullScreen: false, // Start in windowed mode by default
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
     );
-
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-      // Allow resizing (users can make it larger, but not smaller than 1024x768)
-    });
+  } catch (e) {
+    print('Failed to initialize Firebase: $e');
   }
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
   await createFilesAndFolders();
-
-  // Initialize auto backup service
-  await AutoBackupService().initialize();
 
   runApp(
     ChangeNotifierProvider(
@@ -62,58 +47,62 @@ void main() async {
   );
 }
 
-class MyApp extends StatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    // Dispose of the auto backup service when app is closing
-    AutoBackupService().dispose();
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Handle app lifecycle changes
-    if (state == AppLifecycleState.detached) {
-      // App is being terminated
-      AutoBackupService().dispose();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
-      title: 'Desktop Search A Holic',
+      title: 'HealSearch',
       theme: themeProvider.themeData,
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
+      builder: (context, child) {
+        // Wrap the entire app in error handling and proper focus scope
+        return Builder(
+          builder: (context) {
+            try {
+              return FocusScope(
+                child: child ?? const SizedBox.shrink(),
+              );
+            } catch (e) {
+              print('Error in app builder: $e');
+              return MaterialApp(
+                home: Scaffold(
+                  body: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error, size: 64, color: Colors.red),
+                        const SizedBox(height: 16),
+                        Text('App Error: ${e.toString()}'),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            // Restart the app
+                            Navigator.pushReplacementNamed(context, '/');
+                          },
+                          child: const Text('Restart'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+          },
+        );
+      },
       routes: {
         '/': (context) => const SplashScreen(),
         '/dashboard': (context) => const Dashboard(),
         '/profile': (context) => const Profile(),
         '/products': (context) => const Product(),
         '/addProduct': (context) => const AddProduct(),
-        '/editProduct': (context) {
-          final arguments = ModalRoute.of(context)?.settings.arguments
-              as Map<String, dynamic>?;
-          final productId = arguments?['productId'] as String? ?? '';
-          return EditProduct(productID: productId);
-        },
+        '/editProduct': (context) =>
+            const EditProduct(productID: '1'), // Dummy productID
         '/invoices': (context) => const Invoice(),
         '/reports': (context) => const Reports(),
         '/chatBot': (context) => ChatBotPage(),
@@ -124,8 +113,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         '/sales': (context) => const Sales(),
         '/uploadData': (context) => const UploadData(),
         '/settings': (context) => const SettingsPage(),
-        '/pos': (context) => const enhanced.POS(),
         '/backup-history': (context) => const BackupHistoryPage(),
+        '/privacy-policy': (context) => const PrivacyPolicyPage(),
+        '/terms-of-service': (context) => const TermsOfServicePage(),
+        '/pos': (context) => const enhanced.POS(),
       },
     );
   }

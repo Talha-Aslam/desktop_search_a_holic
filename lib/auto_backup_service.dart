@@ -19,15 +19,18 @@ class AutoBackupService {
   /// Initialize automatic backup service
   Future<void> initialize() async {
     try {
+      if (_isDisposed) return; // Don't initialize if already disposed
+
       final prefs = await SharedPreferences.getInstance();
       bool autoBackupEnabled = prefs.getBool('auto_backup_enabled') ?? true;
 
-      if (autoBackupEnabled) {
+      if (autoBackupEnabled && !_isDisposed) {
         await _scheduleNextBackup();
         print('Auto backup service initialized');
       }
     } catch (e) {
       print('Failed to initialize auto backup service: $e');
+      // Don't rethrow to prevent app startup issues
     }
   }
 

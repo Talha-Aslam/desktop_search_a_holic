@@ -1,5 +1,5 @@
 name: desktop_search_a_holic
-description: "A new Flutter project."
+description: "HealSearch - A comprehensive Point of Sale desktop application."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -17,7 +17,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   fluent_ui: ^4.9.2
-  window_manager: ^0.3.7
+  desktop_window: ^0.4.1
   firedart: ^0.9.8
   flutter_native_splash: ^2.4.1 # Splash Screen
   path_provider: ^2.1.4
@@ -54,29 +54,29 @@ flutter:
   uses-material-design: true
 
   assets:
-    # - assets/data.json
-    - images/logo.png
-    - images/registration.jpg
-    - images/analytics_icon.png
-    - images/categories_icon.png
-    - images/dashboard_icon.png
-    - images/orders_icon.png
-    - images/products_icon.png
-    - images/profile_icon.png
-    - images/revenue_icon.png
-    - images/sale_icon.png
-    - images/sales_icon.png
-    - images/settings_icon.png
-    - images/sidebarLogo.png
-    - images/newOrder.png
-    - images/searchProduct.png
-    - images/addProduct.png
-    - images/addCategory.png
-    - images/viewOrders.png
-    - images/report.png
-    - images/password_recover.jpg
-    - images/logout_icon3.png
-    - images/profile.jpg
-    - images/password_change.png
-    - images/p1.png
-    - images/uploadData.png
+      # - assets/data.json
+      - images/logo.png
+      - images/registration.jpg
+      - images/analytics_icon.png
+      - images/categories_icon.png
+      - images/dashboard_icon.png
+      - images/orders_icon.png
+      - images/products_icon.png
+      - images/profile_icon.png
+      - images/revenue_icon.png
+      - images/sale_icon.png
+      - images/sales_icon.png
+      - images/settings_icon.png
+      - images/sidebarLogo.png
+      - images/newOrder.png
+      - images/searchProduct.png
+      - images/addProduct.png
+      - images/addCategory.png
+      - images/viewOrders.png
+      - images/report.png
+      - images/password_recover.jpg
+      - images/logout_icon3.png
+      - images/profile.jpg
+      - images/password_change.png
+      - images/p1.png
+      - images/uploadData.png

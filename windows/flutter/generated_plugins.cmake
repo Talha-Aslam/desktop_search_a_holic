@@ -4,14 +4,13 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   cloud_firestore
+  desktop_window
   firebase_auth
   firebase_core
   geolocator_windows
   permission_handler_windows
   qr_bar_code
-  screen_retriever
   url_launcher_windows
-  window_manager
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

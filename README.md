@@ -1,3 +1,3 @@
-# desktop_search_a_holic
+# HealSearch
 
-A new Flutter project.
+A comprehensive Point of Sale (POS) desktop application built with Flutter. HealSearch provides businesses with powerful inventory management, sales tracking, reporting, and analytics capabilities.

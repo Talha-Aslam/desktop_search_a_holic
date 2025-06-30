@@ -1,6 +1,6 @@
 {
-    "name": "desktop_search_a_holic",
-    "short_name": "desktop_search_a_holic",
+    "name": "HealSearch",
+    "short_name": "HealSearch",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
