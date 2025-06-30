@@ -5,7 +5,6 @@ import 'package:desktop_search_a_holic/sidebar.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/reports_service.dart';
-import 'package:desktop_search_a_holic/export_service.dart';
 import 'package:intl/intl.dart';
 
 class Reports extends StatefulWidget {
@@ -22,7 +21,6 @@ class _ReportsState extends State<Reports> {
   String _sortBy = 'Date (Latest)';
   bool _isLoading = true;
   final ReportsService _reportsService = ReportsService();
-  final ExportService _exportService = ExportService();
 
   @override
   void initState() {
@@ -239,12 +237,12 @@ class _ReportsState extends State<Reports> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Container(
             width: MediaQuery.of(context).size.width * 0.6,
+            height: MediaQuery.of(context).size.height * 0.8,
             padding: const EdgeInsets.all(24),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
+                // Header - Fixed at top
                 Row(
                   children: [
                     Container(
@@ -260,7 +258,7 @@ class _ReportsState extends State<Reports> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Expanded(
+                    Flexible(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -271,6 +269,8 @@ class _ReportsState extends State<Reports> {
                               fontWeight: FontWeight.bold,
                               color: themeProvider.textColor,
                             ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -279,6 +279,7 @@ class _ReportsState extends State<Reports> {
                               fontSize: 14,
                               color: themeProvider.textColor.withOpacity(0.7),
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -307,15 +308,21 @@ class _ReportsState extends State<Reports> {
 
                 const SizedBox(height: 24),
 
-                // Description
-                Text(
-                  'Description',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: themeProvider.textColor,
-                  ),
-                ),
+                // Scrollable content area
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Description
+                        Text(
+                          'Description',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: themeProvider.textColor,
+                          ),
+                        ),
                 const SizedBox(height: 8),
                 Text(
                   report['description'],
@@ -343,10 +350,10 @@ class _ReportsState extends State<Reports> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
+                    crossAxisCount: 2,
                     childAspectRatio: 2.5,
                     crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
+                    mainAxisSpacing: 12,
                   ),
                   itemCount: report['data'].length,
                   itemBuilder: (context, index) {
@@ -371,14 +378,20 @@ class _ReportsState extends State<Reports> {
                               color: themeProvider.textColor.withOpacity(0.7),
                               fontSize: 12,
                             ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            value.toString(),
-                            style: TextStyle(
-                              color: themeProvider.textColor,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Text(
+                              _formatValue(value),
+                              style: TextStyle(
+                                color: themeProvider.textColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ],
@@ -386,10 +399,14 @@ class _ReportsState extends State<Reports> {
                     );
                   },
                 ),
+                      ],
+                    ),
+                  ),
+                ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-                // Actions
+                // Actions - Fixed at bottom
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
@@ -478,6 +495,24 @@ class _ReportsState extends State<Reports> {
     return result;
   }
 
+  String _formatValue(dynamic value) {
+    if (value is num) {
+      // Format numbers with proper decimal places
+      if (value is double) {
+        // Check if it's a whole number
+        if (value == value.roundToDouble()) {
+          return value.toInt().toString();
+        } else {
+          // Format with 2 decimal places for currency/financial values
+          return value.toStringAsFixed(2);
+        }
+      } else {
+        return value.toString();
+      }
+    }
+    return value.toString();
+  }
+
   IconData _getReportTypeIcon(String type) {
     switch (type) {
       case 'Sales':
@@ -512,91 +547,6 @@ class _ReportsState extends State<Reports> {
     }
   }
 
-  Future<void> _showExportDialog() async {
-    final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: themeProvider.cardBackgroundColor,
-        title: Text(
-          'Export Reports',
-          style: TextStyle(color: themeProvider.textColor),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Choose export format:',
-              style: TextStyle(color: themeProvider.textColor),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    try {
-                      await _exportService.exportBusinessReportToCSV();
-                    } catch (e) {
-                      if (mounted) {
-                        QuickAlert.show(
-                          context: context,
-                          type: QuickAlertType.error,
-                          title: 'Export Failed',
-                          text: 'Export failed: $e',
-                        );
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.table_chart),
-                  label: const Text('CSV'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: themeProvider.gradientColors[0],
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    try {
-                      await _exportService.createDataBackup();
-                    } catch (e) {
-                      if (mounted) {
-                        QuickAlert.show(
-                          context: context,
-                          type: QuickAlertType.error,
-                          title: 'Backup Failed',
-                          text: 'Backup failed: $e',
-                        );
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.backup),
-                  label: const Text('Backup'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: themeProvider.textColor),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -618,11 +568,6 @@ class _ReportsState extends State<Reports> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.file_download),
-            tooltip: 'Export Reports',
-            onPressed: () => _showExportDialog(),
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh Reports',
@@ -675,7 +620,7 @@ class _ReportsState extends State<Reports> {
                           size: 18,
                         ),
                         const SizedBox(width: 8),
-                        Expanded(
+                        Flexible(
                           child: Text(
                             reports.any((r) =>
                                     r['id']?.toString().startsWith('R0') ==
@@ -687,6 +632,8 @@ class _ReportsState extends State<Reports> {
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
                           ),
                         ),
                         if (reports.any((r) =>
@@ -720,178 +667,185 @@ class _ReportsState extends State<Reports> {
                         ),
                       ],
                     ),
-                    child: Row(
-                      children: [
-                        // Time period filter
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Time Period',
-                                style: TextStyle(
-                                  color: themeProvider.textColor,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              DropdownButtonFormField<String>(
-                                value: _selectedPeriod,
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                  filled: true,
-                                  fillColor: themeProvider.isDarkMode
-                                      ? Colors.grey.shade800
-                                      : Colors.grey.shade100,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide.none,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Time period filter
+                          SizedBox(
+                            width: 150,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Time Period',
+                                  style: TextStyle(
+                                    color: themeProvider.textColor,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
                                   ),
                                 ),
-                                items: const [
-                                  DropdownMenuItem(
-                                      value: 'All', child: Text('All Time')),
-                                  DropdownMenuItem(
-                                      value: 'This Week',
-                                      child: Text('This Week')),
-                                  DropdownMenuItem(
-                                      value: 'This Month',
-                                      child: Text('This Month')),
-                                  DropdownMenuItem(
-                                      value: 'This Quarter',
-                                      child: Text('This Quarter')),
-                                ],
-                                style:
-                                    TextStyle(color: themeProvider.textColor),
-                                dropdownColor:
-                                    themeProvider.cardBackgroundColor,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedPeriod = value!;
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        // Report type filter
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Report Type',
-                                style: TextStyle(
-                                  color: themeProvider.textColor,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 12,
+                                const SizedBox(height: 4),
+                                DropdownButtonFormField<String>(
+                                  value: _selectedPeriod,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    filled: true,
+                                    fillColor: themeProvider.isDarkMode
+                                        ? Colors.grey.shade800
+                                        : Colors.grey.shade100,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: 'All', child: Text('All Time')),
+                                    DropdownMenuItem(
+                                        value: 'This Week',
+                                        child: Text('This Week')),
+                                    DropdownMenuItem(
+                                        value: 'This Month',
+                                        child: Text('This Month')),
+                                    DropdownMenuItem(
+                                        value: 'This Quarter',
+                                        child: Text('This Quarter')),
+                                  ],
+                                  style:
+                                      TextStyle(color: themeProvider.textColor),
+                                  dropdownColor:
+                                      themeProvider.cardBackgroundColor,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedPeriod = value!;
+                                    });
+                                  },
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              DropdownButtonFormField<String>(
-                                value: _selectedType,
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                  filled: true,
-                                  fillColor: themeProvider.isDarkMode
-                                      ? Colors.grey.shade800
-                                      : Colors.grey.shade100,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide.none,
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Report type filter
+                          SizedBox(
+                            width: 150,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Report Type',
+                                  style: TextStyle(
+                                    color: themeProvider.textColor,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
                                   ),
                                 ),
-                                items: const [
-                                  DropdownMenuItem(
-                                      value: 'All', child: Text('All Types')),
-                                  DropdownMenuItem(
-                                      value: 'Sales', child: Text('Sales')),
-                                  DropdownMenuItem(
-                                      value: 'Inventory',
-                                      child: Text('Inventory')),
-                                  DropdownMenuItem(
-                                      value: 'Customer',
-                                      child: Text('Customer')),
-                                  DropdownMenuItem(
-                                      value: 'Financial',
-                                      child: Text('Financial')),
-                                  DropdownMenuItem(
-                                      value: 'Products',
-                                      child: Text('Products')),
-                                ],
-                                style:
-                                    TextStyle(color: themeProvider.textColor),
-                                dropdownColor:
-                                    themeProvider.cardBackgroundColor,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedType = value!;
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        // Sort by filter
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Sort By',
-                                style: TextStyle(
-                                  color: themeProvider.textColor,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 12,
+                                const SizedBox(height: 4),
+                                DropdownButtonFormField<String>(
+                                  value: _selectedType,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    filled: true,
+                                    fillColor: themeProvider.isDarkMode
+                                        ? Colors.grey.shade800
+                                        : Colors.grey.shade100,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: 'All', child: Text('All Types')),
+                                    DropdownMenuItem(
+                                        value: 'Sales', child: Text('Sales')),
+                                    DropdownMenuItem(
+                                        value: 'Inventory',
+                                        child: Text('Inventory')),
+                                    DropdownMenuItem(
+                                        value: 'Customer',
+                                        child: Text('Customer')),
+                                    DropdownMenuItem(
+                                        value: 'Financial',
+                                        child: Text('Financial')),
+                                    DropdownMenuItem(
+                                        value: 'Products',
+                                        child: Text('Products')),
+                                  ],
+                                  style:
+                                      TextStyle(color: themeProvider.textColor),
+                                  dropdownColor:
+                                      themeProvider.cardBackgroundColor,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedType = value!;
+                                    });
+                                  },
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              DropdownButtonFormField<String>(
-                                value: _sortBy,
-                                decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                  filled: true,
-                                  fillColor: themeProvider.isDarkMode
-                                      ? Colors.grey.shade800
-                                      : Colors.grey.shade100,
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    borderSide: BorderSide.none,
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Sort by filter
+                          SizedBox(
+                            width: 150,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Sort By',
+                                  style: TextStyle(
+                                    color: themeProvider.textColor,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
                                   ),
                                 ),
-                                items: const [
-                                  DropdownMenuItem(
-                                      value: 'Date (Latest)',
-                                      child: Text('Date (Latest)')),
-                                  DropdownMenuItem(
-                                      value: 'Date (Oldest)',
-                                      child: Text('Date (Oldest)')),
-                                  DropdownMenuItem(
-                                      value: 'Title (A-Z)',
-                                      child: Text('Title (A-Z)')),
-                                  DropdownMenuItem(
-                                      value: 'Type', child: Text('Type')),
-                                ],
-                                style:
-                                    TextStyle(color: themeProvider.textColor),
-                                dropdownColor:
-                                    themeProvider.cardBackgroundColor,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _sortBy = value!;
-                                  });
-                                },
-                              ),
-                            ],
+                                const SizedBox(height: 4),
+                                DropdownButtonFormField<String>(
+                                  value: _sortBy,
+                                  decoration: InputDecoration(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    filled: true,
+                                    fillColor: themeProvider.isDarkMode
+                                        ? Colors.grey.shade800
+                                        : Colors.grey.shade100,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: 'Date (Latest)',
+                                        child: Text('Date (Latest)')),
+                                    DropdownMenuItem(
+                                        value: 'Date (Oldest)',
+                                        child: Text('Date (Oldest)')),
+                                    DropdownMenuItem(
+                                        value: 'Title (A-Z)',
+                                        child: Text('Title (A-Z)')),
+                                    DropdownMenuItem(
+                                        value: 'Type', child: Text('Type')),
+                                  ],
+                                  style:
+                                      TextStyle(color: themeProvider.textColor),
+                                  dropdownColor:
+                                      themeProvider.cardBackgroundColor,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _sortBy = value!;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
 
@@ -1001,6 +955,8 @@ class _ReportsState extends State<Reports> {
                                                           FontWeight.bold,
                                                       fontSize: 16,
                                                     ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                    maxLines: 1,
                                                   ),
                                                   const SizedBox(height: 4),
                                                   Text(
@@ -1011,6 +967,8 @@ class _ReportsState extends State<Reports> {
                                                           .withOpacity(0.7),
                                                       fontSize: 14,
                                                     ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                    maxLines: 2,
                                                   ),
                                                   const SizedBox(height: 8),
                                                   Row(
@@ -1045,13 +1003,16 @@ class _ReportsState extends State<Reports> {
                                                         ),
                                                       ),
                                                       const SizedBox(width: 8),
-                                                      Text(
-                                                        'Report #${report['id']}',
-                                                        style: TextStyle(
-                                                          color: themeProvider
-                                                              .textColor
-                                                              .withOpacity(0.5),
-                                                          fontSize: 12,
+                                                      Flexible(
+                                                        child: Text(
+                                                          'Report #${report['id']}',
+                                                          style: TextStyle(
+                                                            color: themeProvider
+                                                                .textColor
+                                                                .withOpacity(0.5),
+                                                            fontSize: 12,
+                                                          ),
+                                                          overflow: TextOverflow.ellipsis,
                                                         ),
                                                       ),
                                                     ],
@@ -1129,44 +1090,47 @@ class _ReportsState extends State<Reports> {
                         ),
                       ],
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildSummaryItem(
-                          context,
-                          'Total Reports',
-                          reports.length.toString(),
-                          Icons.description,
-                        ),
-                        _buildSummaryItem(
-                          context,
-                          'Sales Reports',
-                          reports
-                              .where((r) => r['type'] == 'Sales')
-                              .length
-                              .toString(),
-                          Icons.point_of_sale,
-                        ),
-                        _buildSummaryItem(
-                          context,
-                          'Financial Reports',
-                          reports
-                              .where((r) => r['type'] == 'Financial')
-                              .length
-                              .toString(),
-                          Icons.attach_money,
-                        ),
-                        _buildSummaryItem(
-                          context,
-                          'This Month',
-                          reports
-                              .where((r) => r['date'].isAfter(DateTime.now()
-                                  .subtract(const Duration(days: 30))))
-                              .length
-                              .toString(),
-                          Icons.today,
-                        ),
-                      ],
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildSummaryItem(
+                            context,
+                            'Total Reports',
+                            reports.length.toString(),
+                            Icons.description,
+                          ),
+                          _buildSummaryItem(
+                            context,
+                            'Sales Reports',
+                            reports
+                                .where((r) => r['type'] == 'Sales')
+                                .length
+                                .toString(),
+                            Icons.point_of_sale,
+                          ),
+                          _buildSummaryItem(
+                            context,
+                            'Financial Reports',
+                            reports
+                                .where((r) => r['type'] == 'Financial')
+                                .length
+                                .toString(),
+                            Icons.attach_money,
+                          ),
+                          _buildSummaryItem(
+                            context,
+                            'This Month',
+                            reports
+                                .where((r) => r['date'].isAfter(DateTime.now()
+                                    .subtract(const Duration(days: 30))))
+                                .length
+                                .toString(),
+                            Icons.today,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -1199,29 +1163,39 @@ class _ReportsState extends State<Reports> {
       BuildContext context, String title, String value, IconData icon) {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: themeProvider.gradientColors[0],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: themeProvider.textColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+    return Container(
+      width: 120, // Fixed width to prevent overflow
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            color: themeProvider.gradientColors[0],
+            size: 20,
           ),
-        ),
-        Text(
-          title,
-          style: TextStyle(
-            color: themeProvider.textColor.withOpacity(0.7),
-            fontSize: 12,
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: themeProvider.textColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ],
+          Text(
+            title,
+            style: TextStyle(
+              color: themeProvider.textColor.withOpacity(0.7),
+              fontSize: 11,
+            ),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+          ),
+        ],
+      ),
     );
   }
 }
