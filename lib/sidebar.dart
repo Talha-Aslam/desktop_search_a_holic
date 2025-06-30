@@ -234,12 +234,6 @@ class _SidebarState extends State<Sidebar> {
                   )
                 : Row(
                     children: [
-                      AssetHelper.buildProfileAvatar(
-                        radius: 16,
-                        assetPath: 'images/profile.jpg',
-                        fallbackIcon: Icons.person,
-                      ),
-                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

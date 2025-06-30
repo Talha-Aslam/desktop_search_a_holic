@@ -247,20 +247,6 @@ class _ProfileState extends State<Profile> {
                             ),
                             child: Column(
                               children: [
-                                // Profile Picture
-                                Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 4,
-                                    ),
-                                  ),                                  child: AssetHelper.buildProfileAvatar(
-                                    radius: 60,
-                                    assetPath: 'images/profile.jpg',
-                                    fallbackIcon: Icons.person,
-                                  ),
-                                ),
                                 const SizedBox(height: 16),
                                 // Name
                                 Text(
