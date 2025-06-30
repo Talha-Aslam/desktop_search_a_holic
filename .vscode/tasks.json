@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build and Run Flutter Desktop App with Stock Alerts",
+			"type": "shell",
+			"command": "flutter run -d windows",
+			"group": "build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$dart-flutter"
+			],
+			"args": []
+		}
+	]
+}

@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/sales_service.dart';
 import 'package:desktop_search_a_holic/activity_service.dart';
+import 'package:desktop_search_a_holic/stock_alert_service.dart';
+import 'package:desktop_search_a_holic/stock_alerts_widget.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -28,6 +30,20 @@ class _DashboardState extends State<Dashboard> {
   void initState() {
     super.initState();
     _loadDashboardData();
+
+    // Start stock monitoring when dashboard loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        final stockAlertService =
+            Provider.of<StockAlertService>(context, listen: false);
+        if (!stockAlertService.isMonitoring) {
+          stockAlertService.startMonitoring();
+        }
+        print('✅ StockAlertService found and monitoring started');
+      } catch (e) {
+        print('❌ Error accessing StockAlertService: $e');
+      }
+    });
   }
 
   Future<void> _loadDashboardData() async {
@@ -151,6 +167,20 @@ class _DashboardState extends State<Dashboard> {
                           ],
                         ),
                       ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Stock Alerts - Compact View
+                    Consumer<StockAlertService>(
+                      builder: (context, stockAlertService, child) {
+                        return StockAlertsWidget(
+                          showCompact: true,
+                          onViewAll: () {
+                            Navigator.pushNamed(context, '/stock-alerts');
+                          },
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 24),

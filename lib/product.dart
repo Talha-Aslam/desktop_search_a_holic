@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/sidebar.dart';
 import 'package:desktop_search_a_holic/firebase_service.dart';
+import 'package:desktop_search_a_holic/stock_alerts_widget.dart';
 
 class Product extends StatefulWidget {
   const Product({super.key});
@@ -415,6 +416,13 @@ class _ProductState extends State<Product> {
                                                   context,
                                                   'Quantity: ${product['quantity']}',
                                                   Icons.inventory_2,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                StockStatusIndicator(
+                                                  quantity:
+                                                      (product['quantity'] ?? 0)
+                                                          .toInt(),
+                                                  showLabel: false,
                                                 ),
                                                 const SizedBox(width: 8),
                                                 _buildInfoChip(

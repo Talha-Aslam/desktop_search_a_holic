@@ -5,6 +5,7 @@ import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/sidebar.dart';
 import 'package:desktop_search_a_holic/firebase_service.dart';
 import 'package:desktop_search_a_holic/sales_service.dart';
+import 'package:desktop_search_a_holic/stock_alerts_widget.dart';
 import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
 

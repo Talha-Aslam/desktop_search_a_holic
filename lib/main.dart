@@ -17,6 +17,8 @@ import 'package:desktop_search_a_holic/terms_of_service_page.dart';
 import 'package:desktop_search_a_holic/splash.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/uploadData.dart';
+import 'package:desktop_search_a_holic/stock_alert_service.dart';
+import 'package:desktop_search_a_holic/stock_alerts_page.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
 
@@ -40,8 +42,15 @@ void main() async {
   await createFilesAndFolders();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ThemeProvider>(
+          create: (_) => ThemeProvider(),
+        ),
+        ChangeNotifierProvider<StockAlertService>(
+          create: (_) => StockAlertService(),
+        ),
+      ],
       child: const MyApp(),
     ),
   );
@@ -101,8 +110,12 @@ class MyApp extends StatelessWidget {
         '/profile': (context) => const Profile(),
         '/products': (context) => const Product(),
         '/addProduct': (context) => const AddProduct(),
-        '/editProduct': (context) =>
-            const EditProduct(productID: '1'), // Dummy productID
+        '/editProduct': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments
+              as Map<String, dynamic>?;
+          final productId = args?['productId'] ?? '1'; // Default fallback
+          return EditProduct(productID: productId);
+        },
         '/invoices': (context) => const Invoice(),
         '/reports': (context) => const Reports(),
         '/chatBot': (context) => ChatBotPage(),
@@ -117,6 +130,7 @@ class MyApp extends StatelessWidget {
         '/privacy-policy': (context) => const PrivacyPolicyPage(),
         '/terms-of-service': (context) => const TermsOfServicePage(),
         '/pos': (context) => const enhanced.POS(),
+        '/stock-alerts': (context) => const StockAlertsPage(),
       },
     );
   }
