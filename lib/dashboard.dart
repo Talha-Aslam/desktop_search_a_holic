@@ -248,11 +248,6 @@ class _DashboardState extends State<Dashboard> {
                           'Paracetamol 500mg - 10 minutes ago',
                           style: themeProvider.subtitleTextStyle,
                         ),
-                        trailing: Icon(
-                          Icons.arrow_forward_ios,
-                          color: themeProvider.textColor.withOpacity(0.5),
-                          size: 16,
-                        ),
                       ),
                     ), // Activities list
                     if (_recentActivities.isEmpty)
@@ -312,12 +307,6 @@ class _DashboardState extends State<Dashboard> {
                                   subtitle: Text(
                                     activity['subtitle'],
                                     style: themeProvider.subtitleTextStyle,
-                                  ),
-                                  trailing: Icon(
-                                    Icons.arrow_forward_ios,
-                                    color: themeProvider.textColor
-                                        .withOpacity(0.5),
-                                    size: 16,
                                   ),
                                 ),
                               ))

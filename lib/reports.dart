@@ -323,82 +323,84 @@ class _ReportsState extends State<Reports> {
                             color: themeProvider.textColor,
                           ),
                         ),
-                const SizedBox(height: 8),
-                Text(
-                  report['description'],
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: themeProvider.textColor.withOpacity(0.8),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Data points
-                Text(
-                  'Key Metrics',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: themeProvider.textColor,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Data grid
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 2.5,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: report['data'].length,
-                  itemBuilder: (context, index) {
-                    String key = report['data'].keys.elementAt(index);
-                    dynamic value = report['data'][key];
-
-                    return Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: themeProvider.isDarkMode
-                            ? Colors.grey.shade800
-                            : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _formatKey(key),
-                            style: TextStyle(
-                              color: themeProvider.textColor.withOpacity(0.7),
-                              fontSize: 12,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                        const SizedBox(height: 8),
+                        Text(
+                          report['description'],
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: themeProvider.textColor.withOpacity(0.8),
                           ),
-                          const SizedBox(height: 4),
-                          Flexible(
-                            child: Text(
-                              _formatValue(value),
-                              style: TextStyle(
-                                color: themeProvider.textColor,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Data points
+                        Text(
+                          'Key Metrics',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: themeProvider.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Data grid
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 2.5,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 12,
+                          ),
+                          itemCount: report['data'].length,
+                          itemBuilder: (context, index) {
+                            String key = report['data'].keys.elementAt(index);
+                            dynamic value = report['data'][key];
+
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: themeProvider.isDarkMode
+                                    ? Colors.grey.shade800
+                                    : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    _formatKey(key),
+                                    style: TextStyle(
+                                      color: themeProvider.textColor
+                                          .withOpacity(0.7),
+                                      fontSize: 12,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Flexible(
+                                    child: Text(
+                                      _formatValue(value),
+                                      style: TextStyle(
+                                        color: themeProvider.textColor,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -416,27 +418,6 @@ class _ReportsState extends State<Reports> {
                         'Close',
                         style: TextStyle(color: themeProvider.textColor),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content:
-                                Text('Report "${report['title']}" downloaded'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: themeProvider.gradientColors[0],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                      ),
-                      icon: const Icon(Icons.download),
-                      label: const Text('Download PDF'),
                     ),
                   ],
                 ),
@@ -955,7 +936,8 @@ class _ReportsState extends State<Reports> {
                                                           FontWeight.bold,
                                                       fontSize: 16,
                                                     ),
-                                                    overflow: TextOverflow.ellipsis,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                     maxLines: 1,
                                                   ),
                                                   const SizedBox(height: 4),
@@ -967,7 +949,8 @@ class _ReportsState extends State<Reports> {
                                                           .withOpacity(0.7),
                                                       fontSize: 14,
                                                     ),
-                                                    overflow: TextOverflow.ellipsis,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                     maxLines: 2,
                                                   ),
                                                   const SizedBox(height: 8),
@@ -1009,10 +992,12 @@ class _ReportsState extends State<Reports> {
                                                           style: TextStyle(
                                                             color: themeProvider
                                                                 .textColor
-                                                                .withOpacity(0.5),
+                                                                .withOpacity(
+                                                                    0.5),
                                                             fontSize: 12,
                                                           ),
-                                                          overflow: TextOverflow.ellipsis,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
                                                         ),
                                                       ),
                                                     ],
