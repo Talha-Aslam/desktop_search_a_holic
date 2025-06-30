@@ -55,6 +55,7 @@ flutter:
 
   assets:
       # - assets/data.json
+      - images/healsearch_logo.png
       - images/logo.png
       - images/registration.jpg
       - images/analytics_icon.png

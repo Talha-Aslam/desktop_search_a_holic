@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:desktop_search_a_holic/healsearch_branding.dart';
 import 'package:desktop_search_a_holic/auto_backup_service.dart';
 import 'dart:async';
 
@@ -46,15 +47,34 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('images/logo.png'),
-            const SizedBox(height: 20),
-            const CircularProgressIndicator(),
-            const SizedBox(height: 10),
-            const Text('Initializing...'),
+            const HealSearchBranding(
+              logoSize: 180,
+              titleSize: 36,
+              subtitleSize: 18,
+            ),
+            const SizedBox(height: 40),
+            Container(
+              width: 40,
+              height: 40,
+              child: const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+                strokeWidth: 3,
+              ),
+            ),
+            const SizedBox(height: 15),
+            Text(
+              'Initializing...',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade400,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),

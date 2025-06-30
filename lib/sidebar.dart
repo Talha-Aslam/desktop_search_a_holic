@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
+import 'package:desktop_search_a_holic/healsearch_branding.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:desktop_search_a_holic/asset_helper.dart';
@@ -72,23 +73,23 @@ class _SidebarState extends State<Sidebar> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 12),
-                const CircleAvatar(
-                  radius: 30, // Reduced from 40 to 30
-                  backgroundImage: AssetImage('images/logo.png'),
-                  backgroundColor: Colors.white,
+                const HealSearchLogo(
+                  width: 60,
+                  height: 60,
+                  borderRadius: 15,
                 ),
                 const SizedBox(height: 12),
                 const Text(
                   'HealSearch',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16, // Reduced from 20 to 16
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 2),
                 const Text(
-                  'Desktop Application',
+                  'Retail Management',
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 12, // Reduced from 14 to 12
