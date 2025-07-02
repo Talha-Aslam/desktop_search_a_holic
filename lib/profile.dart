@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:desktop_search_a_holic/theme_provider.dart';
 import 'package:desktop_search_a_holic/sidebar.dart';
 import 'package:desktop_search_a_holic/firebase_service.dart'; // Add Firebase service import
-import 'package:desktop_search_a_holic/asset_helper.dart'; // Add asset helper import
 
 class Profile extends StatefulWidget {
   const Profile({super.key});

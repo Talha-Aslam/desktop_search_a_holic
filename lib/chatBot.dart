@@ -105,13 +105,14 @@ class _ChatBotPageState extends State<ChatBotPage> {
 
       try {
         // Process message with advanced AI service
-        ChatResponse response = await _chatBotService.processMessage(userMessage);
-        
+        ChatResponse response =
+            await _chatBotService.processMessage(userMessage);
+
         if (mounted) {
           setState(() {
             _isTyping = false;
           });
-          
+
           _addBotMessage(
             response.text,
             responseType: response.type,
@@ -124,7 +125,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
           setState(() {
             _isTyping = false;
           });
-          
+
           _addBotMessage(
             "I apologize, but I encountered an error processing your request. Please try again or rephrase your question.",
             suggestions: [
@@ -157,16 +158,18 @@ class _ChatBotPageState extends State<ChatBotPage> {
 
     try {
       ChatResponse response;
-      
+
       switch (action) {
         case 'daily_summary':
           response = await _chatBotService.getDailySummary();
           break;
         case 'stock_alerts':
-          response = await _chatBotService.processMessage('show me stock alerts');
+          response =
+              await _chatBotService.processMessage('show me stock alerts');
           break;
         case 'today_sales':
-          response = await _chatBotService.processMessage('show today\'s sales');
+          response =
+              await _chatBotService.processMessage('show today\'s sales');
           break;
         case 'inventory_status':
           response = await _chatBotService.processMessage('inventory status');
@@ -175,17 +178,19 @@ class _ChatBotPageState extends State<ChatBotPage> {
           response = await _chatBotService.processMessage('business overview');
           break;
         case 'capabilities':
-          response = _chatBotService.processMessage('what can you do?') as ChatResponse;
+          response = _chatBotService.processMessage('what can you do?')
+              as ChatResponse;
           break;
         default:
-          response = await _chatBotService.processMessage(action.replaceAll('_', ' '));
+          response =
+              await _chatBotService.processMessage(action.replaceAll('_', ' '));
       }
-      
+
       if (mounted) {
         setState(() {
           _isTyping = false;
         });
-        
+
         _addBotMessage(
           response.text,
           responseType: response.type,
@@ -198,7 +203,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
         setState(() {
           _isTyping = false;
         });
-        
+
         _addBotMessage(
           "I couldn't process that action right now. Please try again.",
           suggestions: [
@@ -430,7 +435,8 @@ class _ChatBotPageState extends State<ChatBotPage> {
     );
   }
 
-  Widget _buildEnhancedMessageBubble(ChatMessage message, ThemeProvider themeProvider) {
+  Widget _buildEnhancedMessageBubble(
+      ChatMessage message, ThemeProvider themeProvider) {
     final isUserMessage = message.isUserMessage;
     final bubbleColor = isUserMessage
         ? themeProvider.gradientColors[0]
@@ -460,8 +466,8 @@ class _ChatBotPageState extends State<ChatBotPage> {
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: isUserMessage 
-                  ? CrossAxisAlignment.end 
+              crossAxisAlignment: isUserMessage
+                  ? CrossAxisAlignment.end
                   : CrossAxisAlignment.start,
               children: [
                 Container(
@@ -506,7 +512,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
                     ],
                   ),
                 ),
-                
+
                 // Add data visualization for bot messages
                 if (!isUserMessage && message.data != null) ...[
                   const SizedBox(height: 8),
@@ -515,7 +521,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
                     title: _getDataTitle(message.responseType),
                   ),
                 ],
-                
+
                 // Add action buttons for bot messages
                 if (!isUserMessage && message.suggestions != null) ...[
                   const SizedBox(height: 8),
@@ -618,7 +624,7 @@ class _ChatBotPageState extends State<ChatBotPage> {
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const SizedBox.shrink();
         }
-        
+
         return Container(
           height: 58,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -652,7 +658,8 @@ class _ChatBotPageState extends State<ChatBotPage> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  onPressed: () => _handleActionPress(suggestion['action'] ?? ''),
+                  onPressed: () =>
+                      _handleActionPress(suggestion['action'] ?? ''),
                 ),
               );
             },
