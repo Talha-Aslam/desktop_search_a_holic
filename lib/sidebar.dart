@@ -183,12 +183,6 @@ class _SidebarState extends State<Sidebar> {
                 ),
                 _buildListTile(
                   context: context,
-                  icon: Icons.lock,
-                  text: 'Change Password',
-                  route: '/changePassword',
-                ),
-                _buildListTile(
-                  context: context,
                   icon: Icons.chat,
                   text: 'ChatBot',
                   route: '/chatBot',
