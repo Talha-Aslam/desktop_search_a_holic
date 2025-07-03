@@ -53,23 +53,59 @@ class _LoginState extends State<Login> {
         // Handle specific Firebase Auth errors
         String errorMessage = 'An error occurred during login';
 
-        if (e.code == 'user-not-found') {
-          errorMessage = 'No user found with this email';
-        } else if (e.code == 'wrong-password') {
-          errorMessage = 'Invalid password';
-        } else if (e.code == 'invalid-email') {
-          errorMessage = 'Invalid email format';
-        } else if (e.code == 'user-disabled') {
-          errorMessage = 'This account has been disabled';
+        switch (e.code) {
+          case 'user-not-found':
+            errorMessage = 'No account found with this email address';
+            break;
+          case 'wrong-password':
+            errorMessage = 'Incorrect password. Please try again';
+            break;
+          case 'invalid-email':
+            errorMessage = 'Please enter a valid email address';
+            break;
+          case 'user-disabled':
+            errorMessage = 'This account has been disabled. Contact support';
+            break;
+          case 'too-many-requests':
+            errorMessage = 'Too many failed attempts. Please try again later';
+            break;
+          case 'invalid-credential':
+            errorMessage =
+                'Invalid email or password. Please check your credentials';
+            break;
+          case 'network-request-failed':
+            errorMessage =
+                'Network error. Please check your internet connection';
+            break;
+          case 'operation-not-allowed':
+            errorMessage = 'Email/password sign-in is not enabled';
+            break;
+          default:
+            errorMessage = 'Login failed: ${e.message ?? 'Unknown error'}';
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Dismiss',
+              textColor: Colors.white,
+              onPressed: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+            ),
+          ),
         );
       } catch (e) {
         // Handle other errors
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login error: ${e.toString()}')),
+          SnackBar(
+            content: Text('Login error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
         );
       } finally {
         setState(() {
@@ -77,10 +113,15 @@ class _LoginState extends State<Login> {
         });
       }
     } else {
+      // Show validation error
+      String fieldName =
+          validationMessage == "emptyEmail" ? "email" : "password";
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text(
-                'Please enter your ${validationMessage == "emptyEmail" ? "email" : "password"}')),
+          content: Text('Please enter your $fieldName'),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 3),
+        ),
       );
     }
   }
