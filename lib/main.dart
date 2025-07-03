@@ -2,6 +2,7 @@ import 'package:desktop_search_a_holic/chatBot.dart';
 import 'package:desktop_search_a_holic/imports.dart';
 import 'package:desktop_search_a_holic/addProduct.dart';
 import 'package:desktop_search_a_holic/editProduct.dart';
+import 'package:desktop_search_a_holic/forgetPassword.dart';
 import 'package:desktop_search_a_holic/invoice.dart';
 import 'package:desktop_search_a_holic/newOrder.dart';
 import 'package:desktop_search_a_holic/pos_enhanced.dart' as enhanced;
@@ -129,6 +130,7 @@ class MyApp extends StatelessWidget {
         '/terms-of-service': (context) => const TermsOfServicePage(),
         '/pos': (context) => const enhanced.POS(),
         '/stock-alerts': (context) => const StockAlertsPage(),
+        '/forgetPassword': (context) => const ForgetPassword(),
       },
     );
   }

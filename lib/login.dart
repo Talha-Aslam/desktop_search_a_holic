@@ -276,8 +276,21 @@ class _LoginState extends State<Login> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/forgetPassword');
+                        onPressed: () async {
+                          try {
+                            await Navigator.pushNamed(
+                                context, '/forgetPassword');
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Error navigating to password reset: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
                         },
                         child: const Text(
                           'Forgot Password?',
